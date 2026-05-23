@@ -391,7 +391,13 @@
           <input type="text" id="msg-title" placeholder="제목 *">
           <input type="text" id="msg-date-input" placeholder="날짜 (예: 2026.05.23) *">
           <textarea id="msg-body" placeholder="본문 내용 *"></textarea>
-          <button class="admin-submit" onclick="submitCandidateMsg()">메시지 등록</button>
+          <label style="display:block;font-size:.95rem;font-weight:900;color:#344054;margin-bottom:6px;">사진 첨부 (선택)</label>
+          <input type="file" id="msg-file" accept="image/*" style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:12px;font-size:1rem;background:#fff;">
+          <div id="msg-preview" style="display:none;margin-bottom:12px;"><img id="msg-preview-img" style="max-width:100%;max-height:200px;border-radius:12px;object-fit:contain;" src="" alt="미리보기"></div>
+          <div id="msg-edit-id" style="display:none;"></div>
+          <button class="admin-submit" id="msg-submit-btn" onclick="submitCandidateMsg()">메시지 등록</button>
+          <button class="admin-submit" id="msg-cancel-btn" onclick="cancelMsgEdit()" style="display:none;background:#667085;margin-left:8px;">취소</button>
+          <div id="msg-progress" style="display:none;margin-top:8px;font-size:.9rem;color:var(--blue);">처리 중...</div>
           <div class="admin-status" id="msg-status"></div>
         </div>
       </div>
@@ -609,6 +615,7 @@
 
     /* ── 파일 선택 시 미리보기 ── */
     document.addEventListener('DOMContentLoaded', function() {
+      // 활동사진 미리보기
       const fileInput = document.getElementById('act-file');
       if (fileInput) {
         fileInput.addEventListener('change', function() {
@@ -624,6 +631,20 @@
           } else {
             document.getElementById('act-preview').style.display = 'none';
           }
+        });
+      }
+      // 메시지 이미지 미리보기
+      const msgFile = document.getElementById('msg-file');
+      if (msgFile) {
+        msgFile.addEventListener('change', function() {
+          const file = this.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = e => {
+            document.getElementById('msg-preview-img').src = e.target.result;
+            document.getElementById('msg-preview').style.display = 'block';
+          };
+          reader.readAsDataURL(file);
         });
       }
     });
@@ -696,6 +717,26 @@
       }
     }
 
+    /* ── 활동 삭제 ── */
+    async function deleteActivity(id, imgUrl) {
+      if (!confirm('이 사진/영상을 삭제할까요?')) return;
+      try {
+        // Storage 파일 삭제
+        if (imgUrl && imgUrl.includes('activity-photos')) {
+          const fileName = imgUrl.split('/').pop();
+          await _supabase.storage.from('activity-photos').remove([fileName]);
+        }
+        // DB 레코드 삭제
+        const { error } = await _supabase.from(ACTIVITY_TABLE).delete().eq('id', id);
+        if (error) throw error;
+        alert('삭제되었습니다.');
+        loadActivities();
+      } catch(e) {
+        console.error(e);
+        alert('삭제 실패: ' + e.message);
+      }
+    }
+
     /* ── 활동 갤러리 불러오기 ── */
     async function loadActivities() {
       const grid = document.getElementById('activity-grid');
@@ -723,8 +764,13 @@
           } else if (item.img) {
             mediaHtml = `<div class="activity-thumb" onclick="openLightbox('${escHtml(item.img)}')"><img src="${escHtml(item.img)}" alt="${escHtml(item.title)}" loading="lazy"></div>`;
           }
+          const isAdmin = new URLSearchParams(window.location.search).has('admin');
           card.innerHTML = mediaHtml +
-            `<div class="activity-info"><div class="act-date">${escHtml(item.date)}</div><h4>${escHtml(item.title)}</h4></div>`;
+            `<div class="activity-info">
+              <div class="act-date">${escHtml(item.date)}</div>
+              <h4>${escHtml(item.title)}</h4>
+              ${isAdmin ? `<button onclick="deleteActivity(${item.id}, '${escHtml(item.img || '')}')" style="margin-top:8px;border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;">🗑 삭제</button>` : ''}
+            </div>`;
           frag.appendChild(card);
         });
         grid.innerHTML = '';
@@ -732,6 +778,24 @@
       } catch(e) {
         console.error('[활동갤러리]', e);
         grid.innerHTML = `<div class="activity-empty" style="grid-column:1/-1;color:#c0392b;">불러오기 실패: ${escHtml(e.message)}</div>`;
+      }
+    }
+
+    /* ── 후보자 메시지 삭제 ── */
+    async function deleteCandidateMsg(id, imgUrl) {
+      if (!confirm('이 메시지를 삭제할까요?')) return;
+      try {
+        if (imgUrl && imgUrl.includes('activity-photos')) {
+          const fileName = imgUrl.split('/').pop();
+          await _supabase.storage.from('activity-photos').remove([fileName]);
+        }
+        const { error } = await _supabase.from(CANDIDATE_MSG_TABLE).delete().eq('id', id);
+        if (error) throw error;
+        alert('삭제되었습니다.');
+        loadCandidateMsgs();
+      } catch(e) {
+        console.error(e);
+        alert('삭제 실패: ' + e.message);
       }
     }
 
@@ -744,27 +808,97 @@
         `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
     }
 
-    /* ── 후보자 메시지 등록 ── */
+    /* ── 후보자 메시지 등록/수정 ── */
     async function submitCandidateMsg() {
-      const title  = document.getElementById('msg-title').value.trim();
-      const date   = document.getElementById('msg-date-input').value.trim();
-      const body   = document.getElementById('msg-body').value.trim();
+      const title    = document.getElementById('msg-title').value.trim();
+      const date     = document.getElementById('msg-date-input').value.trim();
+      const body     = document.getElementById('msg-body').value.trim();
+      const fileEl   = document.getElementById('msg-file');
+      const file     = fileEl.files[0];
+      const editId   = document.getElementById('msg-edit-id').textContent.trim();
       const statusEl = document.getElementById('msg-status');
+      const progress = document.getElementById('msg-progress');
+
       if (!title || !date || !body) { alert('제목, 날짜, 본문을 모두 입력해주세요.'); return; }
+
       statusEl.className = 'admin-status';
+      statusEl.style.display = 'none';
+      progress.style.display = 'block';
+
       try {
-        const { error } = await _supabase.from(CANDIDATE_MSG_TABLE).insert([{ title, date, body }]);
-        if (error) throw error;
-        statusEl.textContent = '✅ 메시지가 등록되었습니다!';
+        let imgUrl = '';
+
+        // 이미지 업로드
+        if (file) {
+          progress.textContent = '이미지 업로드 중...';
+          const ext = file.name.split('.').pop();
+          const fileName = `msg_${Date.now()}.${ext}`;
+          const { error: upErr } = await _supabase.storage
+            .from('activity-photos').upload(fileName, file, { upsert: false });
+          if (upErr) throw upErr;
+          const { data: urlData } = _supabase.storage
+            .from('activity-photos').getPublicUrl(fileName);
+          imgUrl = urlData.publicUrl;
+        }
+
+        progress.textContent = '저장 중...';
+
+        if (editId) {
+          // 수정 모드
+          const updateData = { title, date, body };
+          if (imgUrl) updateData.img = imgUrl;
+          const { error } = await _supabase.from(CANDIDATE_MSG_TABLE)
+            .update(updateData).eq('id', editId);
+          if (error) throw error;
+          statusEl.textContent = '✅ 수정되었습니다!';
+        } else {
+          // 신규 등록
+          const { error } = await _supabase.from(CANDIDATE_MSG_TABLE)
+            .insert([{ title, date, body, img: imgUrl }]);
+          if (error) throw error;
+          statusEl.textContent = '✅ 메시지가 등록되었습니다!';
+        }
+
         statusEl.className = 'admin-status ok';
-        document.getElementById('msg-title').value = '';
-        document.getElementById('msg-body').value = '';
+        statusEl.style.display = 'block';
+        cancelMsgEdit();
         loadCandidateMsgs();
       } catch(e) {
         console.error(e);
         statusEl.textContent = '오류: ' + e.message;
         statusEl.className = 'admin-status err';
+        statusEl.style.display = 'block';
+      } finally {
+        progress.style.display = 'none';
       }
+    }
+
+    /* ── 메시지 수정 폼 채우기 ── */
+    function editCandidateMsg(item) {
+      document.getElementById('msg-title').value = item.title;
+      document.getElementById('msg-date-input').value = item.date;
+      document.getElementById('msg-body').value = item.body;
+      document.getElementById('msg-edit-id').textContent = item.id;
+      document.getElementById('msg-submit-btn').textContent = '수정 저장';
+      document.getElementById('msg-cancel-btn').style.display = 'inline-block';
+      // 기존 이미지 미리보기
+      if (item.img) {
+        document.getElementById('msg-preview-img').src = item.img;
+        document.getElementById('msg-preview').style.display = 'block';
+      }
+      document.getElementById('msg-admin-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /* ── 메시지 수정 취소 ── */
+    function cancelMsgEdit() {
+      document.getElementById('msg-title').value = '';
+      document.getElementById('msg-date-input').value = '';
+      document.getElementById('msg-body').value = '';
+      document.getElementById('msg-file').value = '';
+      document.getElementById('msg-edit-id').textContent = '';
+      document.getElementById('msg-submit-btn').textContent = '메시지 등록';
+      document.getElementById('msg-cancel-btn').style.display = 'none';
+      document.getElementById('msg-preview').style.display = 'none';
     }
 
     /* ── 후보자 메시지 불러오기 ── */
@@ -801,7 +935,31 @@
           p.textContent = item.body;
           card.appendChild(meta);
           card.appendChild(h3);
+          // 이미지가 있으면 표시
+          if (item.img) {
+            const imgEl = document.createElement('img');
+            imgEl.src = item.img;
+            imgEl.alt = item.title;
+            imgEl.style.cssText = 'width:100%;max-height:360px;object-fit:cover;border-radius:14px;margin:12px 0;';
+            card.appendChild(imgEl);
+          }
           card.appendChild(p);
+          const isAdminMsg = new URLSearchParams(window.location.search).has('admin');
+          if (isAdminMsg) {
+            const btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✏️ 수정';
+            editBtn.style.cssText = 'border:0;background:#e0f0ff;color:#173889;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;';
+            editBtn.onclick = () => editCandidateMsg(item);
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '🗑 삭제';
+            delBtn.style.cssText = 'border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;';
+            delBtn.onclick = () => deleteCandidateMsg(item.id, item.img);
+            btnRow.appendChild(editBtn);
+            btnRow.appendChild(delBtn);
+            card.appendChild(btnRow);
+          }
           frag.appendChild(card);
         });
         listEl.innerHTML = '';
