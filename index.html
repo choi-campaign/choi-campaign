@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1-나 최신명 | 고양시의회의원선거</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Pretendard", "Noto Sans KR", Arial, sans-serif; background:#f5f7fb; color:#101828; line-height:1.6; overflow-x:hidden; }
+    a { color:inherit; text-decoration:none; }
+    img { display:block; max-width:100%; }
+    button { font-family:inherit; }
+    .container { width:min(1180px, 92%); margin:0 auto; }
+    :root { --blue:#173889; --deep:#07145a; --sky:#20b9e8; --yellow:#ffc400; --white:#fff; --muted:#667085; }
+    header { position:fixed; top:0; left:0; width:100%; height:84px; z-index:1000; background:rgba(255,255,255,.92); backdrop-filter:blur(14px); border-bottom:1px solid rgba(23,56,137,.12); }
+    .nav { height:84px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:14px; min-width:260px; }
+    .party-logo { width:128px; height:auto; object-fit:contain; }
+    .brand-name { font-weight:950; color:var(--deep); letter-spacing:-.05em; line-height:1.15; font-size:1.18rem; }
+    .brand-name small { display:block; font-size:.82rem; color:#344054; letter-spacing:-.02em; margin-top:4px; font-weight:800; }
+    .nav-menu { display:flex; gap:18px; color:#1d2939; font-size:1rem; font-weight:850; white-space:nowrap; }
+    .nav-menu a:hover { color:var(--blue); }
+    .nav-cta { border:0; border-radius:999px; background:var(--blue); color:#fff; padding:13px 22px; font-weight:950; cursor:pointer; box-shadow:0 10px 24px rgba(23,56,137,.2); white-space:nowrap; font-size:1rem; }
+    .hero { position:relative; height:100vh; min-height:720px; overflow:hidden; background:linear-gradient(135deg, #081d64 0%, #173889 55%, #00a4b5 100%); padding-top:84px; }
+    .slides { height:100%; width:400%; display:flex; transition:transform .75s ease; }
+    .slide { width:100vw; height:calc(100vh - 84px); min-height:636px; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:28px 24px 64px; }
+    .hero-visual { width:min(1180px, 100%); height:100%; border-radius:28px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.06); box-shadow:0 28px 70px rgba(0,0,0,.25); }
+    .hero-visual img { width:100%; height:100%; object-fit:contain; object-position:center; background:transparent; }
+    .hero-actions { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); display:flex; align-items:center; gap:14px; z-index:20; flex-wrap:wrap; justify-content:center; }
+    .dots { display:flex; gap:9px; }
+    .dot { width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,.45); cursor:pointer; }
+    .dot.active { background:#fff; }
+    .hero-btn { border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.14); color:#fff; border-radius:999px; padding:12px 18px; font-weight:950; cursor:pointer; backdrop-filter:blur(10px); font-size:1rem; }
+    section { padding:96px 0; }
+    .section-head { text-align:center; margin-bottom:46px; }
+    .section-kicker { font-size:.95rem; color:var(--blue); font-weight:950; letter-spacing:.08em; margin-bottom:10px; }
+    .section-head h2 { font-size:clamp(2.1rem, 4.4vw, 3.5rem); line-height:1.18; color:var(--deep); letter-spacing:-.065em; font-weight:950; }
+    .section-head p { margin-top:14px; color:var(--muted); font-size:1.08rem; }
+    .vision-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+    .vision-card { background:#fff; border-radius:26px; padding:32px 26px; box-shadow:0 16px 40px rgba(16,24,40,.08); transition:.25s ease; border-top:7px solid var(--blue); }
+    .vision-card:hover { transform:translateY(-7px); }
+    .vision-card .num { font-size:2.4rem; color:var(--yellow); font-weight:950; text-shadow:2px 2px 0 var(--deep); margin-bottom:12px; }
+    .vision-card h3 { color:var(--deep); font-size:1.48rem; line-height:1.25; letter-spacing:-.05em; margin-bottom:12px; }
+    .vision-card p { color:#475467; font-size:1rem; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:start; }
+    .panel { background:#fff; border-radius:28px; overflow:hidden; box-shadow:0 18px 48px rgba(16,24,40,.09); }
+    .panel.pad { padding:34px; }
+    .panel img { width:100%; height:auto; object-fit:contain; }
+    .profile-list { list-style:none; margin-top:22px; }
+    .profile-list li { padding:12px 0; border-bottom:1px solid #edf1f7; font-weight:750; color:#263248; }
+    .badge { display:inline-flex; background:var(--blue); color:#fff; border-radius:999px; padding:8px 15px; font-weight:950; margin-bottom:16px; }
+    .tabs { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-bottom:34px; }
+    .tab-btn { border:0; background:#fff; color:var(--deep); border-radius:999px; padding:14px 24px; font-weight:950; cursor:pointer; box-shadow:0 10px 24px rgba(16,24,40,.08); font-size:1.05rem; }
+    .tab-btn.active { background:var(--blue); color:#fff; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .pledge-layout { display:grid; grid-template-columns:1.1fr .9fr; gap:30px; align-items:start; }
+    .pledge-image { position:sticky; top:110px; background:#fff; border-radius:28px; overflow:hidden; box-shadow:0 18px 48px rgba(16,24,40,.09); }
+    .pledge-list { display:grid; gap:15px; }
+    .pledge-item { display:flex; gap:16px; background:#fff; border-radius:22px; padding:22px; box-shadow:0 12px 30px rgba(16,24,40,.07); }
+    .check { width:36px; height:36px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:950; flex:0 0 auto; }
+    .pledge-item h3 { color:var(--deep); margin-bottom:5px; letter-spacing:-.04em; font-size:1.2rem; }
+    .pledge-item p { color:#5d6678; font-size:1rem; }
+    .gallery-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; }
+    .poster-card { background:#fff; border-radius:24px; overflow:hidden; box-shadow:0 16px 38px rgba(16,24,40,.10); cursor:pointer; transition:.25s ease; }
+    .poster-card:hover { transform:translateY(-7px); }
+    .poster-thumb { height:360px; display:flex; align-items:center; justify-content:center; background:#eef3fb; overflow:hidden; }
+    .poster-thumb img { width:100%; height:100%; object-fit:contain; }
+    .poster-info { padding:18px 20px 22px; }
+    .poster-info h3 { color:var(--deep); font-size:1.16rem; }
+    .media-grid, .support-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .placeholder-box { min-height:260px; background:#fff; border-radius:26px; padding:30px; box-shadow:0 16px 38px rgba(16,24,40,.08); }
+    .placeholder-box h3 { color:var(--deep); margin-bottom:12px; font-size:1.35rem; }
+    .placeholder-box input, .placeholder-box textarea, .placeholder-box select { width:100%; border:1px solid #d9e1ee; border-radius:14px; padding:15px; margin-bottom:12px; font-size:1.05rem; background:#fff; font-family:inherit; }
+    .placeholder-box input:focus, .placeholder-box textarea:focus, .placeholder-box select:focus { outline:2px solid var(--blue); border-color:var(--blue); }
+    .privacy-box { background:#f8fafc; border:1px solid #dbe4f0; border-radius:16px; padding:15px; margin:6px 0 14px; font-size:.92rem; color:#475467; line-height:1.55; }
+    .privacy-check { display:flex; align-items:flex-start; gap:10px; font-size:.98rem; font-weight:850; color:#344054; margin-top:12px; cursor:pointer; }
+    .privacy-check input { width:20px; height:20px; margin:2px 0 0; flex:0 0 auto; }
+    .facebook-feed { display:flex; flex-direction:column; gap:20px; margin-top:16px; }
+    .facebook-post { width:100%; background:#f8fafc; border-radius:18px; border:1px solid #dbe4f0; overflow:hidden; padding:8px; }
+    .facebook-post iframe { width:100%; max-width:500px; display:block; margin:0 auto; border:none; overflow:hidden; border-radius:14px; background:#fff; }
+    .countdown { background:linear-gradient(135deg, var(--deep), var(--blue) 58%, #009eaa); color:#fff; text-align:center; }
+    .countdown .section-head h2, .countdown .section-head p, .countdown .section-kicker { color:#fff; }
+    .count-grid { display:flex; justify-content:center; flex-wrap:wrap; gap:16px; }
+    .count-box { min-width:132px; padding:25px 18px; background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.26); border-radius:22px; backdrop-filter:blur(8px); }
+    .count-box strong { display:block; font-size:2.8rem; line-height:1; }
+    .btn-row { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:24px; }
+    .btn { border:0; border-radius:999px; padding:15px 26px; font-weight:950; cursor:pointer; font-size:1.05rem; }
+    .btn-primary { background:var(--blue); color:#fff; }
+    .btn-point { background:var(--yellow); color:var(--deep); }
+    .btn-primary:disabled { background:#94a3b8; cursor:not-allowed; }
+    .floating-cta { position:fixed; left:18px; bottom:18px; display:flex; flex-direction:column; gap:10px; z-index:1000; }
+    .floating-cta button { width:62px; height:62px; border:0; border-radius:50%; background:var(--blue); color:#fff; font-weight:950; box-shadow:0 12px 28px rgba(0,0,0,.22); cursor:pointer; }
+    footer { background:#061552; color:rgba(255,255,255,.86); padding:54px 0; }
+    .footer-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:28px; }
+    footer .party-logo { background:#fff; border-radius:10px; padding:6px 9px; margin-bottom:14px; }
+    footer h3 { color:#fff; margin-bottom:10px; }
+    .lightbox { position:fixed; inset:0; background:rgba(0,0,0,.86); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px; }
+    .lightbox.active { display:flex; }
+    .lightbox img { max-width:96vw; max-height:92vh; background:#fff; border-radius:12px; object-fit:contain; }
+
+    /* ── 응원메시지 목록 스타일 ── */
+    #support-messages-panel { display:flex; flex-direction:column; }
+    #support-messages-panel h3 { color:var(--deep); margin-bottom:16px; font-size:1.35rem; }
+    #support-list { display:flex; flex-direction:column; gap:14px; margin-top:4px; }
+    .support-card { background:#f8fafc; border:1px solid #dbe4f0; border-radius:18px; padding:18px 20px; }
+    .support-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .support-card-name { font-weight:900; color:var(--blue); font-size:1rem; }
+    .support-card-region { font-size:.85rem; color:var(--muted); background:#eef3fb; border-radius:999px; padding:3px 10px; font-weight:700; }
+    .support-card-msg { color:#344054; font-size:.97rem; line-height:1.6; word-break:break-word; }
+    .support-card-date { font-size:.78rem; color:#98a2b3; margin-top:8px; }
+    .support-empty { color:#667085; font-size:.95rem; text-align:center; padding:32px 0; }
+    .support-loading { color:#667085; font-size:.95rem; text-align:center; padding:32px 0; }
+    .support-error { color:#c0392b; font-size:.92rem; background:#fff5f5; border:1px solid #fca5a5; border-radius:14px; padding:14px; margin-top:8px; }
+    .msg-status { margin-top:10px; font-size:.95rem; border-radius:12px; padding:12px 16px; }
+    .msg-status.success { background:#ecfdf5; color:#166534; border:1px solid #86efac; }
+    .msg-status.error { background:#fff5f5; color:#c0392b; border:1px solid #fca5a5; }
+
+    /* 공유 버튼 영역 */
+    #share-panel { background:#fff; border-radius:26px; padding:30px; box-shadow:0 16px 38px rgba(16,24,40,.08); }
+    #share-panel h3 { color:var(--deep); margin-bottom:12px; font-size:1.35rem; }
+
+    @media (max-width:1024px) {
+      .nav-menu { display:none; }
+      .vision-grid, .two-col, .pledge-layout, .media-grid, .support-grid, .footer-grid { grid-template-columns:1fr; }
+      .gallery-grid { grid-template-columns:repeat(2, 1fr); }
+      .pledge-image { position:relative; top:0; }
+    }
+    @media (max-width:720px) {
+      header, .nav { height:72px; }
+      .brand { gap:8px; min-width:auto; }
+      .party-logo { width:92px; }
+      .brand-name { font-size:1.08rem; }
+      .brand-name small { display:block; font-size:.72rem; max-width:170px; }
+      .nav-cta { padding:10px 14px; font-size:.92rem; }
+      .hero { padding-top:72px; min-height:620px; }
+      .slide { height:calc(100vh - 72px); min-height:548px; padding:18px 10px 64px; }
+      .hero-visual { border-radius:18px; }
+      .hero-btn { font-size:.92rem; padding:10px 14px; }
+      section { padding:70px 0; }
+      .section-head { margin-bottom:32px; }
+      .section-head h2 { font-size:2rem; }
+      .section-head p { font-size:1rem; }
+      .vision-grid, .gallery-grid { grid-template-columns:1fr; }
+      .vision-card { padding:26px 22px; }
+      .poster-thumb { height:300px; }
+      .panel.pad { padding:24px; }
+      .tab-btn { width:100%; max-width:320px; }
+      .pledge-item { padding:20px; }
+      .facebook-post { padding:0; border:none; background:transparent; }
+      .facebook-post iframe { max-width:100%; }
+      .floating-cta { left:12px; bottom:12px; }
+      .floating-cta button { width:54px; height:54px; font-size:.85rem; }
+    }
+  </style>
+  <!-- Supabase JS SDK v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <img class="party-logo" src="더불어민주당_로고2.png" alt="더불어민주당 로고">
+        <span class="brand-name">1-나 최신명<small>고양시의회의원선거 · 고양시 사선거구</small></span>
+      </a>
+      <nav class="nav-menu">
+        <a href="#career">경력</a><a href="#pledge">공약</a><a href="#region">권역</a><a href="#video">영상</a><a href="#press">보도</a><a href="#poster">포스터</a><a href="#donation">후원</a><a href="#support">응원하기</a>
+      </nav>
+      <button class="nav-cta" onclick="copyLink()">지지 &amp; 공유</button>
+    </div>
+  </header>
+
+  <main class="hero" id="top">
+    <div class="slides" id="slides">
+      <div class="slide"><div class="hero-visual"><img src="KakaoTalk_20260520_202128486.jpg" alt="메인 포스터"></div></div>
+      <div class="slide"><div class="hero-visual"><img src="KakaoTalk_20260520_201822343_05.jpg" alt="프로필"></div></div>
+      <div class="slide"><div class="hero-visual"><img src="KakaoTalk_20260520_201930895.jpg" alt="캠페인"></div></div>
+      <div class="slide"><div class="hero-visual"><img src="KakaoTalk_20260520_201822343_03.jpg" alt="활동"></div></div>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn" onclick="location.href='#support'">지지 &amp; 공유하기</button>
+      <button class="hero-btn" onclick="location.href='#pledge'">공약 살펴보기</button>
+      <div class="dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+  </main>
+
+  <section>
+    <div class="container">
+      <div class="section-head">
+        <div class="section-kicker">MAIN MESSAGE</div>
+        <h2>원래 함께 살던 사람,<br>앞으로도 함께 살 사람</h2>
+        <p>정치 구호보다 생활 불편을 먼저 보는 주민 대표</p>
+      </div>
+      <div class="vision-grid">
+        <div class="vision-card"><div class="num">1</div><h3>생활 교통 연결</h3><p>누리버스와 생활권 연결 개선을 추진하겠습니다.</p></div>
+        <div class="vision-card"><div class="num">2</div><h3>안심 생활환경</h3><p>어두운 길과 보행환경을 살펴 밤길 불안을 줄이겠습니다.</p></div>
+        <div class="vision-card"><div class="num">3</div><h3>생활 돌봄</h3><p>이불케어, 공공상주, 돌봄 지원처럼 작지만 절실한 생활복지부터 챙기겠습니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="career">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-kicker">CANDIDATE STORY</div>
+        <h2>왜 최신명인가</h2>
+      </div>
+      <div class="two-col">
+        <div class="panel"><img src="KakaoTalk_20260520_202209528_04.jpg" alt="경력"></div>
+        <div class="panel pad">
+          <span class="badge">1-나 · 더불어민주당</span>
+          <h3>최신명</h3>
+          <ul class="profile-list">
+            <li>중산마을 1단지 동대표 및 공동체활성화 이사(현)</li>
+            <li>고양시병 지역위원회 기본사회위원회 부위원장(현)</li>
+            <li>사단법인 기본사회 고양 상임대표(현)</li>
+            <li>사단법인 기본사회 교육실장(현)</li>
+            <li>김복동의희망 운영위원(현)</li>
+            <li>행동하는고양시민모임 파란고양이 활동국장(현)</li>
+            <li>시민의눈 고양·파주 대접주(전)</li>
+            <li>조선대학교 서반아어과 졸업</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">MESSAGE</div><h2>후보자 정보와 인사말</h2></div>
+      <div class="panel"><img src="KakaoTalk_20260520_202209528_01.jpg" alt="인사말"></div>
+    </div>
+  </section>
+
+  <section id="pledge">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-kicker">PLEDGE</div>
+        <h2>생활 속에서 체감되는 변화</h2>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="p1">생활 교통</button>
+        <button class="tab-btn" data-tab="p2">생활 돌봄</button>
+        <button class="tab-btn" data-tab="p3">안심 환경</button>
+      </div>
+      <div class="tab-panel active" id="p1">
+        <div class="pledge-layout">
+          <div class="pledge-image"><img src="KakaoTalk_20260520_202209528.jpg" alt="교통"></div>
+          <div class="pledge-list">
+            <div class="pledge-item"><span class="check">✓</span><div><h3>누리버스 생활권 연결</h3><p>웃돌골~해태쇼핑~추후 인천2호선 연계 추진</p></div></div>
+            <div class="pledge-item"><span class="check">✓</span><div><h3>풍산역·일산역 접근성 개선</h3><p>풍산역·일산역 방향 누리버스 확대</p></div></div>
+            <div class="pledge-item"><span class="check">✓</span><div><h3>주차 불편 완화</h3><p>일산시장 주차장 재정비 등 검토</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="p2">
+        <div class="pledge-layout">
+          <div class="pledge-image"><img src="KakaoTalk_20260520_202209528_03.jpg" alt="돌봄"></div>
+          <div class="pledge-list">
+            <div class="pledge-item"><span class="check">✓</span><div><h3>이불케어</h3><p>고령자·취약계층 이불 수거 세탁 지원</p></div></div>
+            <div class="pledge-item"><span class="check">✓</span><div><h3>공공상주</h3><p>취약 유가족 기본애도서비스 제안</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="p3">
+        <div class="pledge-layout">
+          <div class="pledge-image"><img src="KakaoTalk_20260520_201946756.png" alt="안전"></div>
+          <div class="pledge-list">
+            <div class="pledge-item"><span class="check">✓</span><div><h3>안심밤길</h3><p>구도심·농로 가로등 설치 개선</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="region">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">REGION</div><h2>권역별 세부 공약</h2></div>
+      <div class="panel"><img src="KakaoTalk_20260520_202209528_03.jpg" alt="지역별"></div>
+    </div>
+  </section>
+
+  <section id="poster">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">POSTER</div><h2>공약 홍보 포스터</h2></div>
+      <div class="gallery-grid">
+        <div class="poster-card" onclick="openLightbox('KakaoTalk_20260520_202128486.jpg')"><div class="poster-thumb"><img src="KakaoTalk_20260520_202128486.jpg" alt="메인 포스터"></div><div class="poster-info"><h3>메인 포스터</h3></div></div>
+        <div class="poster-card" onclick="openLightbox('KakaoTalk_20260520_202209528_01.jpg')"><div class="poster-thumb"><img src="KakaoTalk_20260520_202209528_01.jpg" alt="후보자 정보"></div><div class="poster-info"><h3>후보자 정보</h3></div></div>
+        <div class="poster-card" onclick="openLightbox('KakaoTalk_20260520_202209528_02.jpg')"><div class="poster-thumb"><img src="KakaoTalk_20260520_202209528_02.jpg" alt="주요 약속"></div><div class="poster-info"><h3>주요 약속</h3></div></div>
+        <div class="poster-card" onclick="openLightbox('KakaoTalk_20260520_202209528_03.jpg')"><div class="poster-thumb"><img src="KakaoTalk_20260520_202209528_03.jpg" alt="지역별 공약"></div><div class="poster-info"><h3>지역별 공약</h3></div></div>
+        <div class="poster-card" onclick="openLightbox('KakaoTalk_20260520_202128435.png')"><div class="poster-thumb"><img src="KakaoTalk_20260520_202128435.png" alt="건물 현수막"></div><div class="poster-info"><h3>건물 현수막</h3></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="video">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">VIDEO</div><h2>영상 / 인터뷰</h2></div>
+      <div class="media-grid">
+        <div class="placeholder-box"><h3>메인 영상</h3><p>[링크 입력 필요]</p></div>
+        <div class="placeholder-box"><h3>영상 목록</h3><p>[목록 입력 필요]</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="press">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">PRESS</div><h2>보도자료와 페이스북</h2></div>
+      <div class="media-grid">
+        <div class="placeholder-box">
+          <h3>보도자료</h3>
+          <a href="https://www.mygoyang.com/news/articleView.html?idxno=88736" target="_blank" rel="noopener" style="display:block; background:#f8fafc; border-radius:18px; padding:20px; border:1px solid #dbe4f0;">
+            <div style="font-size:.85rem; font-weight:900; color:#173889; margin-bottom:8px;">MYGOYANG NEWS</div>
+            <div style="font-size:1.12rem; font-weight:900; color:#07145a;">최신명 후보 관련 보도자료 보기</div>
+          </a>
+        </div>
+        <div class="placeholder-box">
+          <h3>페이스북 최신글</h3>
+          <div class="facebook-feed">
+            <div class="facebook-post">
+              <iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3Dpfbid02itvy48ZsotMMXkvzd6An15sE4bzvWVbFCEkMEsACJfoMU9BJpzaT4fVnTDT8PThjl%26id%3D100044125743307&show_text=true&width=500" width="500" height="729" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="countdown">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">D-DAY</div><h2>6월 3일, 우리 동네를 바꿀 그날까지</h2></div>
+      <div class="count-grid">
+        <div class="count-box"><strong id="days">--</strong><span>일</span></div>
+        <div class="count-box"><strong id="hours">--</strong><span>시간</span></div>
+        <div class="count-box"><strong id="minutes">--</strong><span>분</span></div>
+        <div class="count-box"><strong id="seconds">--</strong><span>초</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="donation">
+    <div class="container">
+      <div class="section-head"><div class="section-kicker">DONATION</div><h2>공식 후원 안내</h2></div>
+      <div class="two-col" style="grid-template-columns:1fr; max-width:760px; margin:0 auto;">
+        <div class="panel pad">
+          <span class="badge">공식 정치후원 계좌</span>
+          <h3>최신명후원회</h3>
+          <div style="margin-top:24px; padding:22px; background:#f8fafc; border:1px solid #dbe4f0; border-radius:20px;">
+            <p style="font-weight:950; color:#07145a; font-size:1.2rem;">국민은행</p>
+            <p style="font-weight:950; color:#101828; font-size:1.55rem;">291601-04-298864</p>
+            <p style="margin-top:8px; color:#475467;">예금주: 최신명후원회</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       지지선언 & 응원메시지 섹션
+  ════════════════════════════════════════════ -->
+  <section id="support">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-kicker">SUPPORT</div>
+        <h2>지지선언 &amp; 응원메시지</h2>
+        <p>최신명 후보를 응원하는 한마디를 남겨주세요.</p>
+      </div>
+      <div class="support-grid">
+
+        <!-- 왼쪽: 입력 폼 -->
+        <div class="placeholder-box">
+          <h3>응원 메시지 남기기</h3>
+          <input type="text" id="sup-name" placeholder="이름 *" maxlength="20" autocomplete="off">
+          <select id="sup-region" aria-label="지역 선택">
+            <option value="">지역 선택 *</option>
+            <option value="중산1동">중산1동</option>
+            <option value="중산2동">중산2동</option>
+            <option value="일산2동">일산2동</option>
+            <option value="고봉동">고봉동</option>
+            <option value="기타">기타</option>
+          </select>
+          <textarea id="sup-message" rows="5" placeholder="응원메시지를 남겨주세요 * (최대 200자)" maxlength="200"></textarea>
+          <div class="privacy-box">
+            <strong>개인정보 수집·이용 동의 (필수)</strong><br>
+            수집 항목: 이름, 지역, 응원메시지, 작성시간<br>
+            보유 기간: 선거 종료 후 30일 이내 파기
+            <label class="privacy-check">
+              <input type="checkbox" id="sup-agree">
+              <span>동의합니다.</span>
+            </label>
+          </div>
+          <!-- 제출 상태 메시지 표시 영역 -->
+          <div id="submit-status" style="display:none;" class="msg-status"></div>
+          <button class="btn btn-primary" id="submit-btn" onclick="submitSupportMessage()">응원하기</button>
+          <div style="margin-top:20px;">
+            <button class="btn btn-primary" onclick="copyLink()" style="width:100%;margin-bottom:10px;">링크 복사하기</button>
+            <button class="btn btn-point" onclick="location.href='tel:010-9326-0175'" style="width:100%;">전화 문의</button>
+          </div>
+        </div>
+
+        <!-- 오른쪽: 응원메시지 목록 -->
+        <div id="support-messages-panel" class="placeholder-box">
+          <h3>최근 응원메시지</h3>
+          <div id="support-list">
+            <div class="support-loading">메시지를 불러오는 중입니다…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-grid">
+      <div>
+        <img class="party-logo" src="더불어민주당_로고2.png" alt="더불어민주당 로고">
+        <h3>1-나 최신명</h3>
+        <p>고양시 사선거구</p>
+      </div>
+      <div>
+        <h3>선거사무소</h3>
+        <p>중산로 241 해태쇼핑타운 236호</p>
+      </div>
+      <div>
+        <h3>연락처</h3>
+        <p>Tel. 010-9326-0175</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="floating-cta">
+    <button onclick="copyLink()">공유</button>
+    <button onclick="location.href='tel:010-9326-0175'">전화</button>
+  </div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImage" src="" alt="포스터 크게 보기">
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════
+       ① Supabase 설정 — URL과 ANON KEY만 여기서 교체하세요.
+       ※ service_role key는 절대 여기에 넣지 마세요.
+    ════════════════════════════════════════════════════════ */
+    const SUPABASE_URL     = "https://maqxqvbfmjvzsbsfhvnc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXhxdmJmbWp2enNic2Zodm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTMyNzMsImV4cCI6MjA5NTAyOTI3M30.QyYid9pnKy7W73fbJGJjbfLitrHMshyA8xIBNtl5AOM";
+    // 위 키는 이미지에서 확인된 Publishable(anon) key입니다.
+    // Supabase 대시보드 > Settings > API Keys > Publishable key 값과 동일해야 합니다.
+
+    /* ② 테이블명 상수 — 테이블명이 바뀌면 여기만 수정 */
+    const TABLE_NAME = "support_messages";
+
+    /* ③ Supabase 클라이언트 초기화 */
+    let _supabase;
+    try {
+      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log("[Supabase] 클라이언트 초기화 완료");
+    } catch (e) {
+      console.error("[Supabase] 클라이언트 초기화 실패:", e);
+    }
+
+    /* ④ XSS 방지용 이스케이프 함수 */
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    /* ⑤ 이름 마스킹 함수 (예: 홍길동 → 홍*동) — 추후 사용 가능 */
+    function maskName(name) {
+      if (!name || name.length === 0) return "";
+      if (name.length === 1) return name;
+      if (name.length === 2) return name[0] + "*";
+      return name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
+    }
+
+    /* ⑥ 날짜 포맷 함수 */
+    function formatDate(isoStr) {
+      if (!isoStr) return "";
+      const d = new Date(isoStr);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const h = String(d.getHours()).padStart(2, "0");
+      const min = String(d.getMinutes()).padStart(2, "0");
+      return `${y}.${m}.${day} ${h}:${min}`;
+    }
+
+    /* ⑦ 응원메시지 목록 불러오기 */
+    async function loadSupportMessages() {
+      const listEl = document.getElementById("support-list");
+      if (!listEl) return;
+
+      if (!_supabase) {
+        listEl.innerHTML = '<div class="support-error">Supabase 연결에 문제가 있습니다. 콘솔을 확인하세요.</div>';
+        return;
+      }
+
+      listEl.innerHTML = '<div class="support-loading">메시지를 불러오는 중입니다…</div>';
+
+      try {
+        const { data, error } = await _supabase
+          .from(TABLE_NAME)
+          .select("id, name, region, message, created_at")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (error) {
+          console.error("[Supabase] 메시지 불러오기 오류:", error);
+          listEl.innerHTML = `<div class="support-error">메시지를 불러오지 못했습니다.<br><small>${escHtml(error.message)}</small></div>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          listEl.innerHTML = '<div class="support-empty">아직 등록된 응원메시지가 없습니다.<br>첫 번째 응원 메시지를 남겨보세요!</div>';
+          return;
+        }
+
+        // XSS 방지: textContent 방식의 DOM 생성
+        const fragment = document.createDocumentFragment();
+        data.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "support-card";
+
+          const header = document.createElement("div");
+          header.className = "support-card-header";
+
+          const nameEl = document.createElement("span");
+          nameEl.className = "support-card-name";
+          nameEl.textContent = item.name + "님";
+
+          const regionEl = document.createElement("span");
+          regionEl.className = "support-card-region";
+          regionEl.textContent = item.region || "";
+
+          header.appendChild(nameEl);
+          header.appendChild(regionEl);
+
+          const msgEl = document.createElement("p");
+          msgEl.className = "support-card-msg";
+          msgEl.textContent = item.message;
+
+          const dateEl = document.createElement("div");
+          dateEl.className = "support-card-date";
+          dateEl.textContent = formatDate(item.created_at);
+
+          card.appendChild(header);
+          card.appendChild(msgEl);
+          card.appendChild(dateEl);
+          fragment.appendChild(card);
+        });
+
+        listEl.innerHTML = "";
+        listEl.appendChild(fragment);
+        console.log(`[Supabase] 응원메시지 ${data.length}건 로드 완료`);
+
+      } catch (err) {
+        console.error("[Supabase] 예상치 못한 오류:", err);
+        listEl.innerHTML = `<div class="support-error">오류가 발생했습니다: ${escHtml(err.message)}</div>`;
+      }
+    }
+
+    /* ⑧ 응원메시지 등록 */
+    async function submitSupportMessage() {
+      const nameEl    = document.getElementById("sup-name");
+      const regionEl  = document.getElementById("sup-region");
+      const messageEl = document.getElementById("sup-message");
+      const agreeEl   = document.getElementById("sup-agree");
+      const statusEl  = document.getElementById("submit-status");
+      const submitBtn = document.getElementById("submit-btn");
+
+      const name    = nameEl.value.trim();
+      const region  = regionEl.value;
+      const message = messageEl.value.trim();
+      const agree   = agreeEl.checked;
+
+      // 입력값 검증
+      if (!name) {
+        alert("이름을 입력해주세요.");
+        nameEl.focus();
+        return;
+      }
+      if (name.length > 20) {
+        alert("이름은 20자 이내로 입력해주세요.");
+        nameEl.focus();
+        return;
+      }
+      if (!region) {
+        alert("지역을 선택해주세요.");
+        regionEl.focus();
+        return;
+      }
+      if (!message) {
+        alert("응원메시지를 입력해주세요.");
+        messageEl.focus();
+        return;
+      }
+      if (message.length > 200) {
+        alert("응원메시지는 200자 이내로 입력해주세요.");
+        messageEl.focus();
+        return;
+      }
+      if (!agree) {
+        alert("개인정보 수집·이용에 동의해주세요.");
+        agreeEl.focus();
+        return;
+      }
+
+      if (!_supabase) {
+        alert("Supabase 연결 오류입니다. 잠시 후 다시 시도해주세요.");
+        return;
+      }
+
+      // 버튼 비활성화 (중복 제출 방지)
+      submitBtn.disabled = true;
+      submitBtn.textContent = "등록 중…";
+      statusEl.style.display = "none";
+      statusEl.className = "msg-status";
+
+      try {
+        const { error } = await _supabase
+          .from(TABLE_NAME)
+          .insert([{
+            name:    name,
+            region:  region,
+            message: message,
+            agree:   true   // 체크박스를 통과했으므로 항상 true
+          }]);
+
+        if (error) {
+          console.error("[Supabase] INSERT 오류:", error);
+          statusEl.textContent = "등록 중 오류가 발생했습니다: " + error.message;
+          statusEl.className = "msg-status error";
+          statusEl.style.display = "block";
+          return;
+        }
+
+        // 성공 처리
+        console.log("[Supabase] 응원메시지 등록 성공");
+        nameEl.value    = "";
+        regionEl.value  = "";
+        messageEl.value = "";
+        agreeEl.checked = false;
+
+        statusEl.textContent = "✅ 응원메시지가 등록되었습니다. 감사합니다!";
+        statusEl.className = "msg-status success";
+        statusEl.style.display = "block";
+
+        // 3초 후 상태 메시지 숨기기
+        setTimeout(() => { statusEl.style.display = "none"; }, 4000);
+
+        // 목록 즉시 새로고침
+        await loadSupportMessages();
+
+      } catch (err) {
+        console.error("[Supabase] 예상치 못한 오류:", err);
+        statusEl.textContent = "오류가 발생했습니다: " + err.message;
+        statusEl.className = "msg-status error";
+        statusEl.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "응원하기";
+      }
+    }
+
+    /* ── 슬라이드 ── */
+    const slidesEl = document.getElementById("slides");
+    const dots = document.querySelectorAll(".dot");
+    let currentSlide = 0;
+    function showSlide(index) {
+      slidesEl.style.transform = `translateX(-${index * 100}vw)`;
+      dots.forEach(d => d.classList.remove("active"));
+      dots[index].classList.add("active");
+      currentSlide = index;
+    }
+    dots.forEach((dot, i) => dot.addEventListener("click", () => showSlide(i)));
+    setInterval(() => showSlide((currentSlide + 1) % 4), 5000);
+
+    /* ── 카운트다운 ── */
+    const electionDate = new Date("2026-06-03T00:00:00");
+    function updateCountdown() {
+      const diff = Math.max(electionDate - new Date(), 0);
+      document.getElementById("days").textContent    = Math.floor(diff / (1000 * 60 * 60 * 24));
+      document.getElementById("hours").textContent   = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, "0");
+      document.getElementById("minutes").textContent = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, "0");
+      document.getElementById("seconds").textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, "0");
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    /* ── 탭 ── */
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    /* ── 라이트박스 ── */
+    function openLightbox(src) {
+      document.getElementById("lightboxImage").src = src;
+      document.getElementById("lightbox").classList.add("active");
+    }
+    function closeLightbox() {
+      document.getElementById("lightbox").classList.remove("active");
+    }
+
+    /* ── 링크 복사 ── */
+    function copyLink() {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => alert("링크가 복사되었습니다."))
+        .catch(() => alert("복사에 실패했습니다. 주소창에서 직접 복사해주세요."));
+    }
+
+    /* ── 페이지 로드 시 응원메시지 불러오기 ── */
+    document.addEventListener("DOMContentLoaded", function () {
+      loadSupportMessages();
+    });
+  </script>
+
+  <!--
+  ═══════════════════════════════════════════════════════════════
+  【Supabase RLS (Row Level Security) 설정 안내】
+
+  현재 대시보드에서 RLS가 "UNRESTRICTED" 상태입니다.
+  공개 배포 전에 아래 정책을 적용하는 것을 강력히 권장합니다.
+
+  Supabase 대시보드 > Authentication > Policies > support_messages 테이블에서:
+
+  1. SELECT 정책 (공개 조회 허용):
+     CREATE POLICY "누구나 응원메시지 조회 가능"
+     ON public.support_messages
+     FOR SELECT
+     USING (true);
+
+  2. INSERT 정책 (누구나 등록 허용):
+     CREATE POLICY "누구나 응원메시지 등록 가능"
+     ON public.support_messages
+     FOR INSERT
+     WITH CHECK (true);
+
+  ※ UPDATE, DELETE 정책은 생성하지 않습니다.
+  ※ RLS 활성화: ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
+  ═══════════════════════════════════════════════════════════════
+  -->
+
+  <script src="https://chatbot-sdk.aitalker.co.kr/talker-sdk.umd.js"></script>
+  <script>TalkerSDK.initializeTalkerSDK({ code: "smchoi", position: "right" });</script>
+</body>
+</html>
