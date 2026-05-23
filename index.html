@@ -683,8 +683,7 @@
         const { error } = await _supabase.storage
           .from('activity-photos').upload(fileName, file, { upsert: false });
         if (error) throw error;
-        const { data } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
-        urls.push(data.publicUrl);
+        urls.push(`${SUPABASE_URL}/storage/v1/object/public/activity-photos/${fileName}`);
       }
       return urls;
     }
@@ -723,14 +722,13 @@
               const { error: upErr } = await _supabase.storage
                 .from('activity-photos').upload(fileName, f, { upsert: false });
               if (upErr) throw upErr;
-              const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
-              imgUrls.push(urlData.publicUrl);
+              const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/activity-photos/${fileName}`;
+              imgUrls.push(publicUrl);
             } else {
               const { error: upErr } = await _supabase.storage
                 .from('activity-photos').upload(fileName, f, { upsert: false });
               if (upErr) throw upErr;
-              const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
-              videoFinal = urlData.publicUrl;
+              videoFinal = `${SUPABASE_URL}/storage/v1/object/public/activity-photos/${fileName}`;
             }
           }
         }
@@ -937,8 +935,8 @@
             const { error: upErr } = await _supabase.storage
               .from('activity-photos').upload(fileName, f, { upsert: false });
             if (upErr) throw upErr;
-            const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
-            imgUrls.push(urlData.publicUrl);
+            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/activity-photos/${fileName}`;
+            imgUrls.push(publicUrl);
           }
         }
 
