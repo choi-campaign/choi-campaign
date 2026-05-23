@@ -134,7 +134,8 @@
     .activity-empty { text-align:center; padding:48px 0; color:var(--muted); }
 
     /* 관리자 업로드 패널 */
-    .admin-panel { background:#f0f4ff; border:2px dashed #c5d2f0; border-radius:22px; padding:28px; margin-top:32px; }
+    .admin-panel { display:none; background:#f0f4ff; border:2px dashed #c5d2f0; border-radius:22px; padding:28px; margin-top:32px; }
+    .admin-panel.visible { display:block; }
     .admin-panel h4 { color:var(--deep); font-size:1.1rem; font-weight:900; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
     .admin-lock { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .admin-lock input { border:1px solid #d9e1ee; border-radius:12px; padding:12px 16px; font-size:1rem; font-family:inherit; flex:1; min-width:200px; }
@@ -534,7 +535,7 @@
        ※ service_role key는 절대 여기에 넣지 마세요.
     ════════════════════════════════════════════════════════ */
     const SUPABASE_URL     = "https://maqxqvbfmjvzsbsfhvnc.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXhxdmJmbWp2enNic2Zodm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTMyNzMsImV4cCI6MjA5NTAyOTI3M30.QyYid9pnKy7W73fbJGJjbfLitrHMshyA8xIBNtl5AOM";
+    const SUPABASE_ANON_KEY = "sb_publishable_yvcTW_uJcm7QY8shWjyskA_8ZgxC_6eI_p8";
     // 위 키는 이미지에서 확인된 Publishable(anon) key입니다.
     // Supabase 대시보드 > Settings > API Keys > Publishable key 값과 동일해야 합니다.
 
@@ -978,6 +979,10 @@
       loadActivities();
       loadCandidateMsgs();
       loadSupportMessages();
+      // ?admin 파라미터가 있을 때만 관리자 패널 표시
+      if (new URLSearchParams(window.location.search).has('admin')) {
+        document.querySelectorAll('.admin-panel').forEach(el => el.classList.add('visible'));
+      }
     });
   </script>
 
