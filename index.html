@@ -357,9 +357,12 @@
         <div class="admin-form" id="act-admin-form">
           <input type="text" id="act-title" placeholder="제목 (예: 중산1동 아침 인사) *">
           <input type="text" id="act-date" placeholder="날짜 (예: 2026.05.23) *">
-          <input type="text" id="act-img" placeholder="이미지 파일명 (예: KakaoTalk_20260523.jpg) — GitHub에 올린 파일명 그대로">
-          <input type="text" id="act-video" placeholder="영상 파일명 또는 페이스북 영상 URL (선택)">
+          <label style="display:block;font-size:.95rem;font-weight:900;color:#344054;margin-bottom:6px;">사진 또는 영상 파일 선택 *</label>
+          <input type="file" id="act-file" accept="image/*,video/*" style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:12px;font-size:1rem;background:#fff;">
+          <div id="act-preview" style="margin-bottom:12px;display:none;"><img id="act-preview-img" style="max-width:100%;max-height:200px;border-radius:12px;object-fit:contain;" src="" alt="미리보기"></div>
+          <input type="text" id="act-video-url" placeholder="페이스북 영상 URL (영상인 경우 선택)">
           <button class="admin-submit" onclick="submitActivity()">사진/영상 등록</button>
+          <div id="act-progress" style="display:none;margin-top:8px;font-size:.9rem;color:var(--blue);">업로드 중...</div>
           <div class="admin-status" id="act-status"></div>
         </div>
       </div>
@@ -604,29 +607,92 @@
         `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
     }
 
-    /* ── 활동 사진/영상 등록 ── */
+    /* ── 파일 선택 시 미리보기 ── */
+    document.addEventListener('DOMContentLoaded', function() {
+      const fileInput = document.getElementById('act-file');
+      if (fileInput) {
+        fileInput.addEventListener('change', function() {
+          const file = this.files[0];
+          if (!file) return;
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = e => {
+              document.getElementById('act-preview-img').src = e.target.result;
+              document.getElementById('act-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+          } else {
+            document.getElementById('act-preview').style.display = 'none';
+          }
+        });
+      }
+    });
+
+    /* ── 활동 사진/영상 등록 (Storage 직접 업로드) ── */
     async function submitActivity() {
-      const title = document.getElementById('act-title').value.trim();
-      const date  = document.getElementById('act-date').value.trim();
-      const img   = document.getElementById('act-img').value.trim();
-      const video = document.getElementById('act-video').value.trim();
+      const title    = document.getElementById('act-title').value.trim();
+      const date     = document.getElementById('act-date').value.trim();
+      const fileEl   = document.getElementById('act-file');
+      const videoUrl = document.getElementById('act-video-url').value.trim();
       const statusEl = document.getElementById('act-status');
+      const progress = document.getElementById('act-progress');
+      const file     = fileEl.files[0];
+
       if (!title || !date) { alert('제목과 날짜는 필수입니다.'); return; }
-      if (!img && !video) { alert('이미지 파일명 또는 영상 정보를 입력해주세요.'); return; }
+      if (!file && !videoUrl) { alert('사진/영상 파일을 선택하거나 영상 URL을 입력해주세요.'); return; }
+
       statusEl.className = 'admin-status';
+      statusEl.style.display = 'none';
+      progress.style.display = 'block';
+
       try {
-        const { error } = await _supabase.from(ACTIVITY_TABLE).insert([{ title, date, img, video }]);
+        let imgUrl = '';
+        let videoFinal = videoUrl;
+
+        if (file) {
+          // 파일명: 날짜_타임스탬프_원본파일명
+          const ext = file.name.split('.').pop();
+          const fileName = `${date.replace(/\./g, '')}_${Date.now()}.${ext}`;
+          progress.textContent = '파일 업로드 중... (잠시만 기다려주세요)';
+
+          const { data: uploadData, error: uploadError } = await _supabase.storage
+            .from('activity-photos')
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = _supabase.storage
+            .from('activity-photos')
+            .getPublicUrl(fileName);
+
+          if (file.type.startsWith('image/')) {
+            imgUrl = urlData.publicUrl;
+          } else {
+            videoFinal = urlData.publicUrl;
+          }
+        }
+
+        progress.textContent = '데이터 저장 중...';
+        const { error } = await _supabase.from(ACTIVITY_TABLE).insert([{
+          title, date, img: imgUrl, video: videoFinal
+        }]);
         if (error) throw error;
+
         statusEl.textContent = '✅ 등록되었습니다!';
         statusEl.className = 'admin-status ok';
+        statusEl.style.display = 'block';
         document.getElementById('act-title').value = '';
-        document.getElementById('act-img').value = '';
-        document.getElementById('act-video').value = '';
+        document.getElementById('act-video-url').value = '';
+        fileEl.value = '';
+        document.getElementById('act-preview').style.display = 'none';
         loadActivities();
       } catch(e) {
         console.error(e);
         statusEl.textContent = '오류: ' + e.message;
         statusEl.className = 'admin-status err';
+        statusEl.style.display = 'block';
+      } finally {
+        progress.style.display = 'none';
       }
     }
 
