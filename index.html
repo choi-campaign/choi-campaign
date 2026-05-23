@@ -161,7 +161,11 @@
     .msg-loading { text-align:center; padding:32px 0; color:var(--muted); }
 
     @media (max-width:1024px) { .activity-grid { grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:720px) { .activity-grid { grid-template-columns:1fr; } .msg-card { padding:22px 20px; } }
+    @media (max-width:720px) {
+      .activity-grid { grid-template-columns:1fr; }
+      .msg-card { padding:22px 20px; }
+      .msg-card img { width:100% !important; height:auto !important; }
+    }
 
     @media (max-width:1024px) {
       .nav-menu { display:none; }
@@ -936,14 +940,61 @@
           card.appendChild(meta);
           card.appendChild(h3);
           // 이미지가 있으면 표시
+          // 이미지+텍스트 레이아웃
           if (item.img) {
+            const layout = document.createElement('div');
+            layout.style.cssText = 'display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:4px;';
+
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'flex:0 0 auto;';
+
             const imgEl = document.createElement('img');
             imgEl.src = item.img;
             imgEl.alt = item.title;
-            imgEl.style.cssText = 'width:100%;max-height:360px;object-fit:cover;border-radius:14px;margin:12px 0;';
-            card.appendChild(imgEl);
+            // 이미지 로드 후 가로/세로 비율 판단해서 레이아웃 결정
+            imgEl.onload = function() {
+              const ratio = this.naturalWidth / this.naturalHeight;
+              if (ratio < 0.85) {
+                // 세로형(포스터): 오른쪽에 배치, 작게
+                imgEl.style.cssText = 'width:200px;height:auto;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);';
+                layout.style.flexDirection = 'row';
+                layout.appendChild(textWrap);
+                layout.appendChild(imgWrap);
+              } else if (ratio > 1.4) {
+                // 가로형(풍경/단체사진): 글 아래 전체 너비
+                imgEl.style.cssText = 'width:100%;max-height:400px;object-fit:cover;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:16px;';
+                card.insertBefore(imgWrap, card.querySelector('.msg-btn-row'));
+                imgWrap.style.cssText = '';
+                return;
+              } else {
+                // 정방형: 오른쪽 중간 크기
+                imgEl.style.cssText = 'width:240px;height:240px;object-fit:cover;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);';
+                layout.style.flexDirection = 'row';
+                layout.appendChild(textWrap);
+                layout.appendChild(imgWrap);
+              }
+              imgWrap.appendChild(imgEl);
+              card.insertBefore(layout, card.querySelector('.msg-btn-row') || null);
+            };
+            imgEl.onerror = function() {
+              imgEl.style.cssText = 'width:100%;max-height:320px;object-fit:contain;border-radius:14px;';
+              imgWrap.appendChild(imgEl);
+              layout.appendChild(textWrap);
+              layout.appendChild(imgWrap);
+              card.insertBefore(layout, card.querySelector('.msg-btn-row') || null);
+            };
+
+            const textWrap = document.createElement('div');
+            textWrap.style.cssText = 'flex:1;min-width:200px;';
+            textWrap.appendChild(p);
+
+            imgWrap.appendChild(imgEl);
+            layout.appendChild(textWrap);
+            layout.appendChild(imgWrap);
+            card.appendChild(layout);
+          } else {
+            card.appendChild(p);
           }
-          card.appendChild(p);
           const isAdminMsg = new URLSearchParams(window.location.search).has('admin');
           if (isAdminMsg) {
             const btnRow = document.createElement('div');
@@ -956,6 +1007,7 @@
             delBtn.textContent = '🗑 삭제';
             delBtn.style.cssText = 'border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;';
             delBtn.onclick = () => deleteCandidateMsg(item.id, item.img);
+            btnRow.className = 'msg-btn-row';
             btnRow.appendChild(editBtn);
             btnRow.appendChild(delBtn);
             card.appendChild(btnRow);
