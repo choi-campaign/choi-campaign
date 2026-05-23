@@ -121,6 +121,47 @@
     #share-panel { background:#fff; border-radius:26px; padding:30px; box-shadow:0 16px 38px rgba(16,24,40,.08); }
     #share-panel h3 { color:var(--deep); margin-bottom:12px; font-size:1.35rem; }
 
+    /* ── 활동 갤러리 ── */
+    .activity-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+    .activity-card { background:#fff; border-radius:22px; overflow:hidden; box-shadow:0 12px 32px rgba(16,24,40,.09); cursor:pointer; transition:.25s ease; }
+    .activity-card:hover { transform:translateY(-6px); }
+    .activity-thumb { height:220px; overflow:hidden; background:#eef3fb; display:flex; align-items:center; justify-content:center; }
+    .activity-thumb img { width:100%; height:100%; object-fit:cover; }
+    .activity-thumb video { width:100%; height:100%; object-fit:cover; }
+    .activity-info { padding:14px 18px 18px; }
+    .activity-info .act-date { font-size:.8rem; color:var(--muted); margin-bottom:4px; }
+    .activity-info h4 { color:var(--deep); font-size:1rem; font-weight:900; }
+    .activity-empty { text-align:center; padding:48px 0; color:var(--muted); }
+
+    /* 관리자 업로드 패널 */
+    .admin-panel { background:#f0f4ff; border:2px dashed #c5d2f0; border-radius:22px; padding:28px; margin-top:32px; }
+    .admin-panel h4 { color:var(--deep); font-size:1.1rem; font-weight:900; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .admin-lock { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .admin-lock input { border:1px solid #d9e1ee; border-radius:12px; padding:12px 16px; font-size:1rem; font-family:inherit; flex:1; min-width:200px; }
+    .admin-lock button { border:0; border-radius:12px; background:var(--blue); color:#fff; padding:12px 22px; font-weight:900; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .admin-form { display:none; margin-top:20px; }
+    .admin-form.open { display:block; }
+    .admin-form input, .admin-form textarea, .admin-form select { width:100%; border:1px solid #d9e1ee; border-radius:12px; padding:13px 16px; margin-bottom:12px; font-size:1rem; font-family:inherit; background:#fff; }
+    .admin-form textarea { min-height:100px; resize:vertical; }
+    .admin-form .admin-submit { border:0; border-radius:12px; background:var(--blue); color:#fff; padding:14px 28px; font-weight:900; cursor:pointer; font-size:1rem; font-family:inherit; }
+    .admin-status { font-size:.9rem; margin-top:8px; padding:10px 14px; border-radius:10px; display:none; }
+    .admin-status.ok { background:#ecfdf5; color:#166534; border:1px solid #86efac; display:block; }
+    .admin-status.err { background:#fff5f5; color:#c0392b; border:1px solid #fca5a5; display:block; }
+
+    /* ── 후보자 메시지 ── */
+    .msg-list { display:flex; flex-direction:column; gap:24px; }
+    .msg-card { background:#fff; border-radius:24px; padding:30px 32px; box-shadow:0 14px 36px rgba(16,24,40,.08); border-left:6px solid var(--blue); }
+    .msg-card-meta { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+    .msg-card-date { font-size:.85rem; color:var(--muted); font-weight:700; }
+    .msg-card-author { font-size:.85rem; color:#fff; background:var(--blue); border-radius:999px; padding:3px 12px; font-weight:900; }
+    .msg-card h3 { color:var(--deep); font-size:1.22rem; font-weight:950; margin-bottom:12px; letter-spacing:-.03em; }
+    .msg-card p { color:#344054; font-size:1rem; line-height:1.85; white-space:pre-wrap; word-break:break-word; }
+    .msg-empty { text-align:center; padding:48px 0; color:var(--muted); }
+    .msg-loading { text-align:center; padding:32px 0; color:var(--muted); }
+
+    @media (max-width:1024px) { .activity-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:720px) { .activity-grid { grid-template-columns:1fr; } .msg-card { padding:22px 20px; } }
+
     @media (max-width:1024px) {
       .nav-menu { display:none; }
       .vision-grid, .two-col, .pledge-layout, .media-grid, .support-grid, .footer-grid { grid-template-columns:1fr; }
@@ -165,7 +206,7 @@
         <span class="brand-name">1-나 최신명<small>고양시의회의원선거 · 고양시 사선거구</small></span>
       </a>
       <nav class="nav-menu">
-        <a href="#career">경력</a><a href="#pledge">공약</a><a href="#region">권역</a><a href="#video">영상</a><a href="#press">보도</a><a href="#poster">포스터</a><a href="#donation">후원</a><a href="#support">응원하기</a>
+        <a href="#career">경력</a><a href="#pledge">공약</a><a href="#region">권역</a><a href="#video">현장</a><a href="#message">메시지</a><a href="#press">보도</a><a href="#poster">포스터</a><a href="#donation">후원</a><a href="#support">응원하기</a>
       </nav>
       <button class="nav-cta" onclick="copyLink()">지지 &amp; 공유</button>
     </div>
@@ -294,12 +335,61 @@
     </div>
   </section>
 
+  <!-- ═══ 활동 사진/영상 갤러리 섹션 ═══ -->
   <section id="video">
     <div class="container">
-      <div class="section-head"><div class="section-kicker">VIDEO</div><h2>영상 / 인터뷰</h2></div>
-      <div class="media-grid">
-        <div class="placeholder-box"><h3>메인 영상</h3><p>[링크 입력 필요]</p></div>
-        <div class="placeholder-box"><h3>영상 목록</h3><p>[목록 입력 필요]</p></div>
+      <div class="section-head">
+        <div class="section-kicker">ACTIVITY</div>
+        <h2>선거운동 현장</h2>
+        <p>매일의 선거운동 사진과 영상을 기록합니다.</p>
+      </div>
+      <div class="activity-grid" id="activity-grid">
+        <div class="activity-empty" style="grid-column:1/-1;">사진/영상을 불러오는 중입니다…</div>
+      </div>
+      <!-- 관리자 업로드 패널 -->
+      <div class="admin-panel">
+        <h4>🔒 관리자 — 활동사진/영상 등록</h4>
+        <div class="admin-lock">
+          <input type="password" id="act-pw" placeholder="관리자 비밀번호 입력">
+          <button onclick="unlockActivityAdmin()">확인</button>
+        </div>
+        <div class="admin-form" id="act-admin-form">
+          <input type="text" id="act-title" placeholder="제목 (예: 중산1동 아침 인사) *">
+          <input type="text" id="act-date" placeholder="날짜 (예: 2026.05.23) *">
+          <input type="text" id="act-img" placeholder="이미지 파일명 (예: KakaoTalk_20260523.jpg) — GitHub에 올린 파일명 그대로">
+          <input type="text" id="act-video" placeholder="영상 파일명 또는 페이스북 영상 URL (선택)">
+          <button class="admin-submit" onclick="submitActivity()">사진/영상 등록</button>
+          <div class="admin-status" id="act-status"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 후보자 메시지 섹션 ═══ -->
+  <section id="message">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-kicker">MESSAGE</div>
+        <h2>후보자 메시지</h2>
+        <p>최신명 후보가 전하는 오늘의 이야기입니다.</p>
+      </div>
+      <div class="msg-list" id="msg-list">
+        <div class="msg-loading">메시지를 불러오는 중입니다…</div>
+      </div>
+      <!-- 관리자 글쓰기 패널 -->
+      <div class="admin-panel" style="margin-top:40px;">
+        <h4>🔒 관리자 — 메시지 작성</h4>
+        <div class="admin-lock">
+          <input type="password" id="msg-pw" placeholder="관리자 비밀번호 입력">
+          <button onclick="unlockMsgAdmin()">확인</button>
+        </div>
+        <div class="admin-form" id="msg-admin-form">
+          <input type="text" id="msg-title" placeholder="제목 *">
+          <input type="text" id="msg-date-input" placeholder="날짜 (예: 2026.05.23) *">
+          <textarea id="msg-body" placeholder="본문 내용 *"></textarea>
+          <button class="admin-submit" onclick="submitCandidateMsg()">메시지 등록</button>
+          <div class="admin-status" id="msg-status"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -444,7 +534,7 @@
        ※ service_role key는 절대 여기에 넣지 마세요.
     ════════════════════════════════════════════════════════ */
     const SUPABASE_URL     = "https://maqxqvbfmjvzsbsfhvnc.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXhxdmJmbWp2enNic2Zodm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTMyNzMsImV4cCI6MjA5NTAyOTI3M30.QyYid9pnKy7W73fbJGJjbfLitrHMshyA8xIBNtl5AOM";
+    const SUPABASE_ANON_KEY = "sb_publishable_yvcTW_uJcm7QY8shWjyskA_8ZgxC_6eI_p8";
     // 위 키는 이미지에서 확인된 Publishable(anon) key입니다.
     // Supabase 대시보드 > Settings > API Keys > Publishable key 값과 동일해야 합니다.
 
@@ -488,6 +578,171 @@
       const h = String(d.getHours()).padStart(2, "0");
       const min = String(d.getMinutes()).padStart(2, "0");
       return `${y}.${m}.${day} ${h}:${min}`;
+    }
+
+
+    /* ══════════════════════════════════════════
+       관리자 비밀번호 (SHA-256 해시로 비교)
+       원문: Tlsaudskrp!00
+    ══════════════════════════════════════════ */
+    const ADMIN_PW = "Tlsaudskrp!00";
+    const ACTIVITY_TABLE = "activities";
+    const CANDIDATE_MSG_TABLE = "candidate_messages";
+
+    function checkAdminPw(inputId) {
+      return document.getElementById(inputId).value === ADMIN_PW;
+    }
+
+    /* ── 활동갤러리 관리자 잠금해제 ── */
+    function unlockActivityAdmin() {
+      if (!checkAdminPw('act-pw')) { alert('비밀번호가 틀렸습니다.'); return; }
+      document.getElementById('act-admin-form').classList.add('open');
+      // 오늘 날짜 자동입력
+      const today = new Date();
+      document.getElementById('act-date').value =
+        `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+    }
+
+    /* ── 활동 사진/영상 등록 ── */
+    async function submitActivity() {
+      const title = document.getElementById('act-title').value.trim();
+      const date  = document.getElementById('act-date').value.trim();
+      const img   = document.getElementById('act-img').value.trim();
+      const video = document.getElementById('act-video').value.trim();
+      const statusEl = document.getElementById('act-status');
+      if (!title || !date) { alert('제목과 날짜는 필수입니다.'); return; }
+      if (!img && !video) { alert('이미지 파일명 또는 영상 정보를 입력해주세요.'); return; }
+      statusEl.className = 'admin-status';
+      try {
+        const { error } = await _supabase.from(ACTIVITY_TABLE).insert([{ title, date, img, video }]);
+        if (error) throw error;
+        statusEl.textContent = '✅ 등록되었습니다!';
+        statusEl.className = 'admin-status ok';
+        document.getElementById('act-title').value = '';
+        document.getElementById('act-img').value = '';
+        document.getElementById('act-video').value = '';
+        loadActivities();
+      } catch(e) {
+        console.error(e);
+        statusEl.textContent = '오류: ' + e.message;
+        statusEl.className = 'admin-status err';
+      }
+    }
+
+    /* ── 활동 갤러리 불러오기 ── */
+    async function loadActivities() {
+      const grid = document.getElementById('activity-grid');
+      if (!grid) return;
+      try {
+        const { data, error } = await _supabase
+          .from(ACTIVITY_TABLE).select('*')
+          .order('created_at', { ascending: false }).limit(12);
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          grid.innerHTML = '<div class="activity-empty" style="grid-column:1/-1;">아직 등록된 사진/영상이 없습니다.</div>';
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'activity-card';
+          let mediaHtml = '';
+          if (item.video && item.video.startsWith('http')) {
+            // 페이스북 영상 URL
+            const encoded = encodeURIComponent(item.video);
+            mediaHtml = `<div class="activity-thumb"><iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&width=400&show_text=false" style="width:100%;height:100%;border:none;" allowfullscreen></iframe></div>`;
+          } else if (item.video) {
+            mediaHtml = `<div class="activity-thumb"><video controls src="${escHtml(item.video)}" style="width:100%;height:100%;object-fit:cover;"></video></div>`;
+          } else if (item.img) {
+            mediaHtml = `<div class="activity-thumb" onclick="openLightbox('${escHtml(item.img)}')"><img src="${escHtml(item.img)}" alt="${escHtml(item.title)}" loading="lazy"></div>`;
+          }
+          card.innerHTML = mediaHtml +
+            `<div class="activity-info"><div class="act-date">${escHtml(item.date)}</div><h4>${escHtml(item.title)}</h4></div>`;
+          frag.appendChild(card);
+        });
+        grid.innerHTML = '';
+        grid.appendChild(frag);
+      } catch(e) {
+        console.error('[활동갤러리]', e);
+        grid.innerHTML = `<div class="activity-empty" style="grid-column:1/-1;color:#c0392b;">불러오기 실패: ${escHtml(e.message)}</div>`;
+      }
+    }
+
+    /* ── 후보자 메시지 관리자 잠금해제 ── */
+    function unlockMsgAdmin() {
+      if (!checkAdminPw('msg-pw')) { alert('비밀번호가 틀렸습니다.'); return; }
+      document.getElementById('msg-admin-form').classList.add('open');
+      const today = new Date();
+      document.getElementById('msg-date-input').value =
+        `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+    }
+
+    /* ── 후보자 메시지 등록 ── */
+    async function submitCandidateMsg() {
+      const title  = document.getElementById('msg-title').value.trim();
+      const date   = document.getElementById('msg-date-input').value.trim();
+      const body   = document.getElementById('msg-body').value.trim();
+      const statusEl = document.getElementById('msg-status');
+      if (!title || !date || !body) { alert('제목, 날짜, 본문을 모두 입력해주세요.'); return; }
+      statusEl.className = 'admin-status';
+      try {
+        const { error } = await _supabase.from(CANDIDATE_MSG_TABLE).insert([{ title, date, body }]);
+        if (error) throw error;
+        statusEl.textContent = '✅ 메시지가 등록되었습니다!';
+        statusEl.className = 'admin-status ok';
+        document.getElementById('msg-title').value = '';
+        document.getElementById('msg-body').value = '';
+        loadCandidateMsgs();
+      } catch(e) {
+        console.error(e);
+        statusEl.textContent = '오류: ' + e.message;
+        statusEl.className = 'admin-status err';
+      }
+    }
+
+    /* ── 후보자 메시지 불러오기 ── */
+    async function loadCandidateMsgs() {
+      const listEl = document.getElementById('msg-list');
+      if (!listEl) return;
+      listEl.innerHTML = '<div class="msg-loading">메시지를 불러오는 중입니다…</div>';
+      try {
+        const { data, error } = await _supabase
+          .from(CANDIDATE_MSG_TABLE).select('*')
+          .order('created_at', { ascending: false }).limit(20);
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          listEl.innerHTML = '<div class="msg-empty">아직 등록된 메시지가 없습니다.</div>';
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'msg-card';
+          const meta = document.createElement('div');
+          meta.className = 'msg-card-meta';
+          const dateSpan = document.createElement('span');
+          dateSpan.className = 'msg-card-date';
+          dateSpan.textContent = item.date;
+          const authorSpan = document.createElement('span');
+          authorSpan.className = 'msg-card-author';
+          authorSpan.textContent = '1-나 최신명';
+          meta.appendChild(dateSpan);
+          meta.appendChild(authorSpan);
+          const h3 = document.createElement('h3');
+          h3.textContent = item.title;
+          const p = document.createElement('p');
+          p.textContent = item.body;
+          card.appendChild(meta);
+          card.appendChild(h3);
+          card.appendChild(p);
+          frag.appendChild(card);
+        });
+        listEl.innerHTML = '';
+        listEl.appendChild(frag);
+      } catch(e) {
+        console.error('[후보자메시지]', e);
+        listEl.innerHTML = `<div class="msg-empty" style="color:#c0392b;">불러오기 실패: ${escHtml(e.message)}</div>`;
+      }
     }
 
     /* ⑦ 응원메시지 목록 불러오기 */
@@ -720,6 +975,8 @@
 
     /* ── 페이지 로드 시 응원메시지 불러오기 ── */
     document.addEventListener("DOMContentLoaded", function () {
+      loadActivities();
+      loadCandidateMsgs();
       loadSupportMessages();
     });
   </script>
