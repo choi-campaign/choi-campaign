@@ -348,7 +348,7 @@
         <div class="activity-empty" style="grid-column:1/-1;">사진/영상을 불러오는 중입니다…</div>
       </div>
       <!-- 관리자 업로드 패널 -->
-      <div class="admin-panel">
+      <div class="admin-panel" style="display:none;">
         <h4>🔒 관리자 — 활동사진/영상 등록</h4>
         <div class="admin-lock">
           <input type="password" id="act-pw" placeholder="관리자 비밀번호 입력">
@@ -378,7 +378,7 @@
         <div class="msg-loading">메시지를 불러오는 중입니다…</div>
       </div>
       <!-- 관리자 글쓰기 패널 -->
-      <div class="admin-panel" style="margin-top:40px;">
+      <div class="admin-panel" style="display:none;margin-top:40px;">
         <h4>🔒 관리자 — 메시지 작성</h4>
         <div class="admin-lock">
           <input type="password" id="msg-pw" placeholder="관리자 비밀번호 입력">
@@ -981,7 +981,7 @@
       loadSupportMessages();
       // ?admin 파라미터가 있을 때만 관리자 패널 표시
       if (new URLSearchParams(window.location.search).has('admin')) {
-        document.querySelectorAll('.admin-panel').forEach(el => el.classList.add('visible'));
+        document.querySelectorAll('.admin-panel').forEach(el => { el.style.display='block'; el.classList.add('visible'); });
       }
     });
   </script>
