@@ -747,7 +747,7 @@
         document.getElementById('act-title').value = '';
         document.getElementById('act-video-url').value = '';
         fileEl.value = '';
-        document.getElementById('act-preview').style.display = 'none';
+        document.getElementById('act-preview-grid').innerHTML = '';
         loadActivities();
       } catch(e) {
         console.error(e);
@@ -999,7 +999,7 @@
       document.getElementById('msg-edit-id').textContent = '';
       document.getElementById('msg-submit-btn').textContent = '메시지 등록';
       document.getElementById('msg-cancel-btn').style.display = 'none';
-      document.getElementById('msg-preview').style.display = 'none';
+      const mp = document.getElementById('msg-preview'); if(mp) mp.style.display = 'none'; document.getElementById('msg-preview-grid').innerHTML = '';
     }
 
     /* ── 후보자 메시지 불러오기 ── */
