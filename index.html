@@ -161,10 +161,27 @@
     .msg-loading { text-align:center; padding:32px 0; color:var(--muted); }
 
     @media (max-width:1024px) { .activity-grid { grid-template-columns:repeat(2,1fr); } }
+    /* ── 멀티 이미지 슬라이더 ── */
+    .img-slider { position:relative; overflow:hidden; border-radius:14px; margin:14px 0; background:#f0f4ff; }
+    .img-slider-track { display:flex; transition:transform .35s ease; }
+    .img-slider-track img { flex:0 0 100%; width:100%; max-height:420px; object-fit:contain; background:#f8fafc; }
+    .img-slider-btn { position:absolute; top:50%; transform:translateY(-50%); border:0; background:rgba(0,0,0,.45); color:#fff; width:38px; height:38px; border-radius:50%; font-size:1.2rem; cursor:pointer; z-index:10; display:flex; align-items:center; justify-content:center; }
+    .img-slider-btn.prev { left:8px; }
+    .img-slider-btn.next { right:8px; }
+    .img-slider-dots { display:flex; justify-content:center; gap:6px; padding:8px 0 4px; }
+    .img-slider-dots span { width:8px; height:8px; border-radius:50%; background:#c5d2f0; cursor:pointer; }
+    .img-slider-dots span.on { background:var(--blue); }
+    .img-slider-count { position:absolute; top:8px; right:12px; background:rgba(0,0,0,.5); color:#fff; font-size:.8rem; border-radius:999px; padding:3px 10px; }
+    /* 업로드 미리보기 그리드 */
+    .upload-preview-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .upload-preview-grid .prev-item { position:relative; width:80px; height:80px; border-radius:10px; overflow:hidden; border:1px solid #d9e1ee; }
+    .upload-preview-grid .prev-item img { width:100%; height:100%; object-fit:cover; }
+    .upload-preview-grid .prev-item button { position:absolute; top:2px; right:2px; width:20px; height:20px; border:0; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; font-size:.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; }
+
     @media (max-width:720px) {
       .activity-grid { grid-template-columns:1fr; }
       .msg-card { padding:22px 20px; }
-      .msg-card img { width:100% !important; height:auto !important; }
+      .img-slider-track img { max-height:280px; }
     }
 
     @media (max-width:1024px) {
@@ -362,8 +379,9 @@
           <input type="text" id="act-title" placeholder="제목 (예: 중산1동 아침 인사) *">
           <input type="text" id="act-date" placeholder="날짜 (예: 2026.05.23) *">
           <label style="display:block;font-size:.95rem;font-weight:900;color:#344054;margin-bottom:6px;">사진 또는 영상 파일 선택 *</label>
-          <input type="file" id="act-file" accept="image/*,video/*" style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:12px;font-size:1rem;background:#fff;">
-          <div id="act-preview" style="margin-bottom:12px;display:none;"><img id="act-preview-img" style="max-width:100%;max-height:200px;border-radius:12px;object-fit:contain;" src="" alt="미리보기"></div>
+          <input type="file" id="act-file" accept="image/*,video/*" multiple style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:4px;font-size:1rem;background:#fff;">
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px;">여러 장 선택 가능</p>
+          <div class="upload-preview-grid" id="act-preview-grid"></div>
           <input type="text" id="act-video-url" placeholder="페이스북 영상 URL (영상인 경우 선택)">
           <button class="admin-submit" onclick="submitActivity()">사진/영상 등록</button>
           <div id="act-progress" style="display:none;margin-top:8px;font-size:.9rem;color:var(--blue);">업로드 중...</div>
@@ -396,7 +414,9 @@
           <input type="text" id="msg-date-input" placeholder="날짜 (예: 2026.05.23) *">
           <textarea id="msg-body" placeholder="본문 내용 *"></textarea>
           <label style="display:block;font-size:.95rem;font-weight:900;color:#344054;margin-bottom:6px;">사진 첨부 (선택)</label>
-          <input type="file" id="msg-file" accept="image/*" style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:12px;font-size:1rem;background:#fff;">
+          <input type="file" id="msg-file" accept="image/*" multiple style="width:100%;border:1px solid #d9e1ee;border-radius:12px;padding:12px;margin-bottom:4px;font-size:1rem;background:#fff;">
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px;">여러 장 선택 가능 (Ctrl 또는 Shift 클릭)</p>
+          <div class="upload-preview-grid" id="msg-preview-grid"></div>
           <div id="msg-preview" style="display:none;margin-bottom:12px;"><img id="msg-preview-img" style="max-width:100%;max-height:200px;border-radius:12px;object-fit:contain;" src="" alt="미리보기"></div>
           <div id="msg-edit-id" style="display:none;"></div>
           <button class="admin-submit" id="msg-submit-btn" onclick="submitCandidateMsg()">메시지 등록</button>
@@ -618,40 +638,56 @@
     }
 
     /* ── 파일 선택 시 미리보기 ── */
+    /* ── 미리보기 그리드 생성 ── */
+    function buildPreviewGrid(files, gridId) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      grid.innerHTML = '';
+      Array.from(files).forEach((file, i) => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wrap = document.createElement('div');
+          wrap.className = 'prev-item';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          const btn = document.createElement('button');
+          btn.textContent = '×';
+          btn.title = '제거';
+          btn.onclick = () => wrap.remove();
+          wrap.appendChild(img);
+          wrap.appendChild(btn);
+          grid.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-      // 활동사진 미리보기
-      const fileInput = document.getElementById('act-file');
-      if (fileInput) {
-        fileInput.addEventListener('change', function() {
-          const file = this.files[0];
-          if (!file) return;
-          if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = e => {
-              document.getElementById('act-preview-img').src = e.target.result;
-              document.getElementById('act-preview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-          } else {
-            document.getElementById('act-preview').style.display = 'none';
-          }
-        });
-      }
-      // 메시지 이미지 미리보기
+      const actFile = document.getElementById('act-file');
+      if (actFile) actFile.addEventListener('change', function() {
+        buildPreviewGrid(this.files, 'act-preview-grid');
+      });
       const msgFile = document.getElementById('msg-file');
-      if (msgFile) {
-        msgFile.addEventListener('change', function() {
-          const file = this.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = e => {
-            document.getElementById('msg-preview-img').src = e.target.result;
-            document.getElementById('msg-preview').style.display = 'block';
-          };
-          reader.readAsDataURL(file);
-        });
-      }
+      if (msgFile) msgFile.addEventListener('change', function() {
+        buildPreviewGrid(this.files, 'msg-preview-grid');
+      });
     });
+
+    /* ── 여러 파일 Storage 업로드 ── */
+    async function uploadFiles(files, prefix) {
+      const urls = [];
+      for (const file of files) {
+        const ext = file.name.split('.').pop();
+        const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+        const { error } = await _supabase.storage
+          .from('activity-photos').upload(fileName, file, { upsert: false });
+        if (error) throw error;
+        const { data } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
+        urls.push(data.publicUrl);
+      }
+      return urls;
+    }
 
     /* ── 활동 사진/영상 등록 (Storage 직접 업로드) ── */
     async function submitActivity() {
@@ -671,35 +707,37 @@
       progress.style.display = 'block';
 
       try {
-        let imgUrl = '';
+        // imgUrls는 업로드 후 채워짐
         let videoFinal = videoUrl;
 
-        if (file) {
-          // 파일명: 날짜_타임스탬프_원본파일명
-          const ext = file.name.split('.').pop();
-          const fileName = `${date.replace(/\./g, '')}_${Date.now()}.${ext}`;
-          progress.textContent = '파일 업로드 중... (잠시만 기다려주세요)';
-
-          const { data: uploadData, error: uploadError } = await _supabase.storage
-            .from('activity-photos')
-            .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-          if (uploadError) throw uploadError;
-
-          const { data: urlData } = _supabase.storage
-            .from('activity-photos')
-            .getPublicUrl(fileName);
-
-          if (file.type.startsWith('image/')) {
-            imgUrl = urlData.publicUrl;
-          } else {
-            videoFinal = urlData.publicUrl;
+        const imgUrls = [];
+        if (fileEl.files.length > 0) {
+          progress.textContent = `파일 업로드 중... (0/${fileEl.files.length})`;
+          let idx = 0;
+          for (const f of fileEl.files) {
+            idx++;
+            progress.textContent = `파일 업로드 중... (${idx}/${fileEl.files.length})`;
+            const ext = f.name.split('.').pop();
+            const fileName = `act_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+            if (f.type.startsWith('image/')) {
+              const { error: upErr } = await _supabase.storage
+                .from('activity-photos').upload(fileName, f, { upsert: false });
+              if (upErr) throw upErr;
+              const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
+              imgUrls.push(urlData.publicUrl);
+            } else {
+              const { error: upErr } = await _supabase.storage
+                .from('activity-photos').upload(fileName, f, { upsert: false });
+              if (upErr) throw upErr;
+              const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
+              videoFinal = urlData.publicUrl;
+            }
           }
         }
 
         progress.textContent = '데이터 저장 중...';
         const { error } = await _supabase.from(ACTIVITY_TABLE).insert([{
-          title, date, img: imgUrl, video: videoFinal
+          title, date, img: imgUrls.join('||'), video: videoFinal
         }]);
         if (error) throw error;
 
@@ -719,6 +757,60 @@
       } finally {
         progress.style.display = 'none';
       }
+    }
+
+    /* ── 이미지 슬라이더 생성 ── */
+    function buildSlider(urls) {
+      if (!urls || urls.length === 0) return null;
+      const wrap = document.createElement('div');
+      wrap.className = 'img-slider';
+      if (urls.length === 1) {
+        const img = document.createElement('img');
+        img.src = urls[0];
+        img.style.cssText = 'width:100%;max-height:420px;object-fit:contain;border-radius:14px;';
+        wrap.appendChild(img);
+        return wrap;
+      }
+      const track = document.createElement('div');
+      track.className = 'img-slider-track';
+      urls.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.loading = 'lazy';
+        track.appendChild(img);
+      });
+      const count = document.createElement('div');
+      count.className = 'img-slider-count';
+      count.textContent = `1 / ${urls.length}`;
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'img-slider-btn prev';
+      prevBtn.textContent = '‹';
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'img-slider-btn next';
+      nextBtn.textContent = '›';
+      const dotsWrap = document.createElement('div');
+      dotsWrap.className = 'img-slider-dots';
+      urls.forEach((_, i) => {
+        const dot = document.createElement('span');
+        if (i === 0) dot.classList.add('on');
+        dot.onclick = () => goSlide(i);
+        dotsWrap.appendChild(dot);
+      });
+      let cur = 0;
+      function goSlide(idx) {
+        cur = (idx + urls.length) % urls.length;
+        track.style.transform = `translateX(-${cur * 100}%)`;
+        count.textContent = `${cur + 1} / ${urls.length}`;
+        dotsWrap.querySelectorAll('span').forEach((d, i) => d.classList.toggle('on', i === cur));
+      }
+      prevBtn.onclick = () => goSlide(cur - 1);
+      nextBtn.onclick = () => goSlide(cur + 1);
+      wrap.appendChild(track);
+      wrap.appendChild(prevBtn);
+      wrap.appendChild(nextBtn);
+      wrap.appendChild(count);
+      wrap.appendChild(dotsWrap);
+      return wrap;
     }
 
     /* ── 활동 삭제 ── */
@@ -833,16 +925,21 @@
         let imgUrl = '';
 
         // 이미지 업로드
-        if (file) {
-          progress.textContent = '이미지 업로드 중...';
-          const ext = file.name.split('.').pop();
-          const fileName = `msg_${Date.now()}.${ext}`;
-          const { error: upErr } = await _supabase.storage
-            .from('activity-photos').upload(fileName, file, { upsert: false });
-          if (upErr) throw upErr;
-          const { data: urlData } = _supabase.storage
-            .from('activity-photos').getPublicUrl(fileName);
-          imgUrl = urlData.publicUrl;
+        const msgFiles = document.getElementById('msg-file').files;
+        const imgUrls = [];
+        if (msgFiles.length > 0) {
+          let idx = 0;
+          for (const f of msgFiles) {
+            idx++;
+            progress.textContent = `이미지 업로드 중... (${idx}/${msgFiles.length})`;
+            const ext = f.name.split('.').pop();
+            const fileName = `msg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+            const { error: upErr } = await _supabase.storage
+              .from('activity-photos').upload(fileName, f, { upsert: false });
+            if (upErr) throw upErr;
+            const { data: urlData } = _supabase.storage.from('activity-photos').getPublicUrl(fileName);
+            imgUrls.push(urlData.publicUrl);
+          }
         }
 
         progress.textContent = '저장 중...';
@@ -850,7 +947,7 @@
         if (editId) {
           // 수정 모드
           const updateData = { title, date, body };
-          if (imgUrl) updateData.img = imgUrl;
+          if (imgUrls.length > 0) updateData.img = imgUrls.join('||');
           const { error } = await _supabase.from(CANDIDATE_MSG_TABLE)
             .update(updateData).eq('id', editId);
           if (error) throw error;
@@ -858,7 +955,7 @@
         } else {
           // 신규 등록
           const { error } = await _supabase.from(CANDIDATE_MSG_TABLE)
-            .insert([{ title, date, body, img: imgUrl }]);
+            .insert([{ title, date, body, img: imgUrls.length > 0 ? imgUrls.join('||') : '' }]);
           if (error) throw error;
           statusEl.textContent = '✅ 메시지가 등록되었습니다!';
         }
@@ -940,60 +1037,12 @@
           card.appendChild(meta);
           card.appendChild(h3);
           // 이미지가 있으면 표시
-          // 이미지+텍스트 레이아웃
+          card.appendChild(p);
+          // 이미지 슬라이더
           if (item.img) {
-            const layout = document.createElement('div');
-            layout.style.cssText = 'display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:4px;';
-
-            const imgWrap = document.createElement('div');
-            imgWrap.style.cssText = 'flex:0 0 auto;';
-
-            const imgEl = document.createElement('img');
-            imgEl.src = item.img;
-            imgEl.alt = item.title;
-            // 이미지 로드 후 가로/세로 비율 판단해서 레이아웃 결정
-            imgEl.onload = function() {
-              const ratio = this.naturalWidth / this.naturalHeight;
-              if (ratio < 0.85) {
-                // 세로형(포스터): 오른쪽에 배치, 작게
-                imgEl.style.cssText = 'width:200px;height:auto;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);';
-                layout.style.flexDirection = 'row';
-                layout.appendChild(textWrap);
-                layout.appendChild(imgWrap);
-              } else if (ratio > 1.4) {
-                // 가로형(풍경/단체사진): 글 아래 전체 너비
-                imgEl.style.cssText = 'width:100%;max-height:400px;object-fit:cover;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:16px;';
-                card.insertBefore(imgWrap, card.querySelector('.msg-btn-row'));
-                imgWrap.style.cssText = '';
-                return;
-              } else {
-                // 정방형: 오른쪽 중간 크기
-                imgEl.style.cssText = 'width:240px;height:240px;object-fit:cover;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);';
-                layout.style.flexDirection = 'row';
-                layout.appendChild(textWrap);
-                layout.appendChild(imgWrap);
-              }
-              imgWrap.appendChild(imgEl);
-              card.insertBefore(layout, card.querySelector('.msg-btn-row') || null);
-            };
-            imgEl.onerror = function() {
-              imgEl.style.cssText = 'width:100%;max-height:320px;object-fit:contain;border-radius:14px;';
-              imgWrap.appendChild(imgEl);
-              layout.appendChild(textWrap);
-              layout.appendChild(imgWrap);
-              card.insertBefore(layout, card.querySelector('.msg-btn-row') || null);
-            };
-
-            const textWrap = document.createElement('div');
-            textWrap.style.cssText = 'flex:1;min-width:200px;';
-            textWrap.appendChild(p);
-
-            imgWrap.appendChild(imgEl);
-            layout.appendChild(textWrap);
-            layout.appendChild(imgWrap);
-            card.appendChild(layout);
-          } else {
-            card.appendChild(p);
+            const urls = item.img.split('||').filter(Boolean);
+            const slider = buildSlider(urls);
+            if (slider) card.appendChild(slider);
           }
           const isAdminMsg = new URLSearchParams(window.location.search).has('admin');
           if (isAdminMsg) {
