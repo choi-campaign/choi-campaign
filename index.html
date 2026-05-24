@@ -841,26 +841,48 @@
           return;
         }
         const frag = document.createDocumentFragment();
+        const isAdmin = new URLSearchParams(window.location.search).has('admin');
         data.forEach(item => {
           const card = document.createElement('div');
           card.className = 'activity-card';
-          let mediaHtml = '';
+
+          // 미디어 영역
           if (item.video && item.video.startsWith('http')) {
-            // 페이스북 영상 URL
             const encoded = encodeURIComponent(item.video);
-            mediaHtml = `<div class="activity-thumb"><iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&width=400&show_text=false" style="width:100%;height:100%;border:none;" allowfullscreen></iframe></div>`;
+            const thumbDiv = document.createElement('div');
+            thumbDiv.className = 'activity-thumb';
+            thumbDiv.innerHTML = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&width=400&show_text=false" style="width:100%;height:100%;border:none;" allowfullscreen></iframe>`;
+            card.appendChild(thumbDiv);
           } else if (item.video) {
-            mediaHtml = `<div class="activity-thumb"><video controls src="${escHtml(item.video)}" style="width:100%;height:100%;object-fit:cover;"></video></div>`;
+            const thumbDiv = document.createElement('div');
+            thumbDiv.className = 'activity-thumb';
+            thumbDiv.innerHTML = `<video controls src="${escHtml(item.video)}" style="width:100%;height:100%;object-fit:cover;"></video>`;
+            card.appendChild(thumbDiv);
           } else if (item.img) {
-            mediaHtml = `<div class="activity-thumb" onclick="openLightbox('${escHtml(item.img)}')"><img src="${escHtml(item.img)}" alt="${escHtml(item.title)}" loading="lazy"></div>`;
+            // base64 또는 URL 모두 split('||')로 처리
+            const urls = item.img.split('||').filter(Boolean);
+            const slider = buildSlider(urls);
+            if (slider) card.appendChild(slider);
           }
-          const isAdmin = new URLSearchParams(window.location.search).has('admin');
-          card.innerHTML = mediaHtml +
-            `<div class="activity-info">
-              <div class="act-date">${escHtml(item.date)}</div>
-              <h4>${escHtml(item.title)}</h4>
-              ${isAdmin ? `<button onclick="deleteActivity(${item.id}, '${escHtml(item.img || '')}')" style="margin-top:8px;border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;">🗑 삭제</button>` : ''}
-            </div>`;
+
+          // 정보 영역
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'activity-info';
+          const dateDiv = document.createElement('div');
+          dateDiv.className = 'act-date';
+          dateDiv.textContent = item.date;
+          const titleEl = document.createElement('h4');
+          titleEl.textContent = item.title;
+          infoDiv.appendChild(dateDiv);
+          infoDiv.appendChild(titleEl);
+          if (isAdmin) {
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '🗑 삭제';
+            delBtn.style.cssText = 'margin-top:8px;border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;';
+            delBtn.onclick = () => deleteActivity(item.id, item.img);
+            infoDiv.appendChild(delBtn);
+          }
+          card.appendChild(infoDiv);
           frag.appendChild(card);
         });
         grid.innerHTML = '';
