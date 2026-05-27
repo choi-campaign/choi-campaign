@@ -1275,7 +1275,7 @@
       const mp = document.getElementById('msg-preview'); if(mp) mp.style.display = 'none'; document.getElementById('msg-preview-grid').innerHTML = '';
     }
 
-    /* ── 후보자 메시지 불러오기 ── */
+    /* ── 후보자 메시지 불러오기 (최신 2개 + 더보기) ── */
     async function loadCandidateMsgs() {
       const listEl = document.getElementById('msg-list');
       if (!listEl) return;
@@ -1289,8 +1289,11 @@
           listEl.innerHTML = '<div class="msg-empty">아직 등록된 메시지가 없습니다.</div>';
           return;
         }
-        const frag = document.createDocumentFragment();
-        data.forEach(item => {
+
+        const PREVIEW = 2; // 처음에 보여줄 개수
+        const isAdminMsg = new URLSearchParams(window.location.search).has('admin');
+
+        function buildCard(item) {
           const card = document.createElement('div');
           card.className = 'msg-card';
           const meta = document.createElement('div');
@@ -1309,15 +1312,12 @@
           p.textContent = item.body;
           card.appendChild(meta);
           card.appendChild(h3);
-          // 이미지가 있으면 표시
           card.appendChild(p);
-          // 이미지 슬라이더
           if (item.img) {
             const urls = item.img.split('||').filter(Boolean);
             const slider = buildSlider(urls);
             if (slider) card.appendChild(slider);
           }
-          const isAdminMsg = new URLSearchParams(window.location.search).has('admin');
           if (isAdminMsg) {
             const btnRow = document.createElement('div');
             btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
@@ -1329,15 +1329,67 @@
             delBtn.textContent = '🗑 삭제';
             delBtn.style.cssText = 'border:0;background:#fee2e2;color:#c0392b;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:900;cursor:pointer;';
             delBtn.onclick = () => deleteCandidateMsg(item.id, item.img);
-            btnRow.className = 'msg-btn-row';
             btnRow.appendChild(editBtn);
             btnRow.appendChild(delBtn);
             card.appendChild(btnRow);
           }
-          frag.appendChild(card);
-        });
+          return card;
+        }
+
         listEl.innerHTML = '';
-        listEl.appendChild(frag);
+
+        // 처음 2개 바로 표시
+        data.slice(0, PREVIEW).forEach(item => {
+          listEl.appendChild(buildCard(item));
+        });
+
+        // 나머지가 있으면 더보기 버튼 + 숨겨진 영역
+        if (data.length > PREVIEW) {
+          // 숨겨진 메시지 래퍼
+          const hiddenWrap = document.createElement('div');
+          hiddenWrap.id = 'msg-hidden';
+          hiddenWrap.style.cssText = 'display:none;display:flex;flex-direction:column;gap:24px;margin-top:0;overflow:hidden;max-height:0;transition:max-height .5s ease;';
+          hiddenWrap.style.display = 'none';
+          data.slice(PREVIEW).forEach(item => {
+            hiddenWrap.appendChild(buildCard(item));
+          });
+          listEl.appendChild(hiddenWrap);
+
+          // 더보기 버튼
+          const moreBtn = document.createElement('button');
+          moreBtn.id = 'msg-more-btn';
+          moreBtn.innerHTML = `이전 메시지 더보기 <span style="font-size:.85rem;opacity:.7;">(${data.length - PREVIEW}개)</span> ▼`;
+          moreBtn.style.cssText = `
+            display:block;width:100%;margin-top:20px;padding:16px;
+            border:1.5px solid #dbe4f0;border-radius:16px;
+            background:#fff;color:#173889;font-size:1rem;font-weight:900;
+            cursor:pointer;font-family:inherit;transition:.2s;
+          `;
+          moreBtn.onmouseenter = () => moreBtn.style.background = '#e8f0ff';
+          moreBtn.onmouseleave = () => moreBtn.style.background = '#fff';
+
+          let opened = false;
+          moreBtn.onclick = () => {
+            opened = !opened;
+            if (opened) {
+              hiddenWrap.style.display = 'flex';
+              hiddenWrap.style.flexDirection = 'column';
+              hiddenWrap.style.gap = '24px';
+              hiddenWrap.style.marginTop = '24px';
+              moreBtn.innerHTML = '접기 ▲';
+              moreBtn.style.borderColor = '#173889';
+            } else {
+              hiddenWrap.style.display = 'none';
+              hiddenWrap.style.marginTop = '0';
+              moreBtn.innerHTML = `이전 메시지 더보기 <span style="font-size:.85rem;opacity:.7;">(${data.length - PREVIEW}개)</span> ▼`;
+              moreBtn.style.borderColor = '#dbe4f0';
+              // 접으면 메시지 섹션 상단으로 스크롤
+              document.getElementById('message').scrollIntoView({ behavior: 'smooth' });
+            }
+          };
+          listEl.appendChild(moreBtn);
+        }
+
       } catch(e) {
         console.error('[후보자메시지]', e);
         listEl.innerHTML = `<div class="msg-empty" style="color:#c0392b;">불러오기 실패: ${escHtml(e.message)}</div>`;
