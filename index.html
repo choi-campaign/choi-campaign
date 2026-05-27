@@ -870,6 +870,35 @@
   </div>
 
   <script>
+    /* ── AI토커 열기 함수 ── */
+    function openAITalker() {
+      // 1) SDK 공식 메서드 시도
+      try {
+        if (typeof TalkerSDK !== 'undefined') {
+          if (typeof TalkerSDK.open === 'function') { TalkerSDK.open(); return; }
+          if (typeof TalkerSDK.toggle === 'function') { TalkerSDK.toggle(); return; }
+          if (typeof TalkerSDK.openChat === 'function') { TalkerSDK.openChat(); return; }
+          if (typeof TalkerSDK.show === 'function') { TalkerSDK.show(); return; }
+        }
+      } catch(e) {}
+      // 2) DOM에서 AI토커가 삽입한 버튼/iframe 직접 클릭
+      var selectors = [
+        'button[class*="talker"]','button[id*="talker"]',
+        'div[class*="talker"] button','div[id*="talker"] button',
+        'button[class*="Talker"]','div[class*="Talker"] button',
+        '[class*="chatbot"] button','[id*="chatbot"] button',
+        'iframe[src*="aitalker"] + * button',
+        '.talker-btn','.talker-button','.chat-button',
+      ];
+      for (var i = 0; i < selectors.length; i++) {
+        var el = document.querySelector(selectors[i]);
+        if (el) { el.click(); return; }
+      }
+      // 3) 최후 fallback — 새 탭으로 AI토커 열기
+      window.open('https://aitalker.co.kr/smchoi', '_blank');
+    }
+
+
     /* ═══════════════════════════════════════════════════════
        ① Supabase 설정 — URL과 ANON KEY만 여기서 교체하세요.
        ※ service_role key는 절대 여기에 넣지 마세요.
@@ -1692,26 +1721,9 @@
   <script src="https://chatbot-sdk.aitalker.co.kr/talker-sdk.umd.js"></script>
   <script>
     TalkerSDK.initializeTalkerSDK({ code: "smchoi", position: "right" });
-
-    // AI토커 열기 함수 — SDK open() 또는 플로팅 버튼 직접 클릭
-    function openAITalker() {
-      try {
-        if (typeof TalkerSDK !== 'undefined') {
-          if (typeof TalkerSDK.open === 'function') { TalkerSDK.open(); return; }
-          if (typeof TalkerSDK.toggle === 'function') { TalkerSDK.toggle(); return; }
-          if (typeof TalkerSDK.openChat === 'function') { TalkerSDK.openChat(); return; }
-        }
-      } catch(e) {}
-      // fallback: SDK 버튼 직접 클릭
-      const btn = document.querySelector('[class*="talker"],[id*="talker"],[class*="Talker"],[id*="aitalker"] button, iframe[src*="aitalker"]');
-      if (btn) { btn.click(); return; }
-      // 최후 fallback: 새 탭
-      window.open('https://aitalker.co.kr/smchoi', '_blank');
-    }
-
-    // 말풍선 8초 후 자동 숨김
+    // 말풍선 12초 후 자동 숨김
     setTimeout(function() {
-      const b = document.getElementById('ai-bubble');
+      var b = document.getElementById('ai-bubble');
       if (b) b.style.display = 'none';
     }, 12000);
   </script>
