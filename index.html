@@ -245,6 +245,7 @@
     <div class="hero-actions">
       <button class="hero-btn" onclick="location.href='#support'">지지 &amp; 공유하기</button>
       <button class="hero-btn" onclick="location.href='#pledge'">공약 살펴보기</button>
+      <button class="hero-btn" onclick="openAITalker()" style="background:rgba(255,196,0,.18);border-color:rgba(255,196,0,.6);color:#ffc400;">💬 AI에게 질문하기</button>
       <div class="dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
     </div>
   </main>
@@ -598,6 +599,29 @@
         </div>
       </div>
 
+      <!-- AI토커 안내 박스 -->
+      <div onclick="openAITalker()" style="
+        margin-top:48px;padding:28px 32px;
+        background:linear-gradient(135deg,#173889,#0a2875);
+        border-radius:24px;cursor:pointer;
+        display:flex;align-items:center;justify-content:space-between;
+        gap:20px;flex-wrap:wrap;
+        box-shadow:0 16px 40px rgba(23,56,137,.25);
+        transition:.2s;
+      " onmouseenter="this.style.transform='translateY(-3px)'"
+         onmouseleave="this.style.transform='none'">
+        <div>
+          <div style="font-size:.85rem;font-weight:900;color:rgba(255,255,255,.7);letter-spacing:.08em;margin-bottom:8px;">AI CANDIDATE</div>
+          <div style="font-size:1.35rem;font-weight:950;color:#fff;letter-spacing:-.03em;margin-bottom:6px;">공약이 더 궁금하신가요?</div>
+          <div style="font-size:.95rem;color:rgba(255,255,255,.8);line-height:1.6;">누리버스, 이불케어, 고봉산 개방… 궁금한 건 뭐든지<br>AI 최신명에게 직접 물어보세요.</div>
+        </div>
+        <div style="
+          background:#ffc400;color:#07145a;
+          border-radius:999px;padding:14px 28px;
+          font-size:1rem;font-weight:950;white-space:nowrap;
+          flex-shrink:0;
+        ">💬 AI에게 질문하기 →</div>
+      </div>
     </div>
   </section>
 
@@ -822,6 +846,24 @@
     <button onclick="copyLink()">공유</button>
     <button onclick="location.href='tel:010-9326-0175'">전화</button>
   </div>
+  <!-- AI토커 말풍선 -->
+  <div id="ai-bubble" style="
+    position:fixed;right:82px;bottom:22px;z-index:999;
+    background:#173889;color:#fff;
+    border-radius:20px 20px 4px 20px;
+    padding:10px 16px;font-size:.88rem;font-weight:900;
+    box-shadow:0 8px 24px rgba(23,56,137,.35);
+    cursor:pointer;white-space:nowrap;
+    animation:bubble-in .5s ease 2s both;
+    font-family:'Pretendard','Noto Sans KR',sans-serif;
+  " onclick="openAITalker()" title="AI 최신명에게 물어보세요">
+    💬 공약 AI에게 물어보세요!
+    <span id="ai-bubble-close" onclick="event.stopPropagation();document.getElementById('ai-bubble').style.display='none';"
+      style="margin-left:8px;opacity:.7;font-size:.8rem;">✕</span>
+  </div>
+  <style>
+    @keyframes bubble-in{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
+  </style>
 
   <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <img id="lightboxImage" src="" alt="포스터 크게 보기">
@@ -1648,6 +1690,30 @@
   -->
 
   <script src="https://chatbot-sdk.aitalker.co.kr/talker-sdk.umd.js"></script>
-  <script>TalkerSDK.initializeTalkerSDK({ code: "smchoi", position: "right" });</script>
+  <script>
+    TalkerSDK.initializeTalkerSDK({ code: "smchoi", position: "right" });
+
+    // AI토커 열기 함수 — SDK open() 또는 플로팅 버튼 직접 클릭
+    function openAITalker() {
+      try {
+        if (typeof TalkerSDK !== 'undefined') {
+          if (typeof TalkerSDK.open === 'function') { TalkerSDK.open(); return; }
+          if (typeof TalkerSDK.toggle === 'function') { TalkerSDK.toggle(); return; }
+          if (typeof TalkerSDK.openChat === 'function') { TalkerSDK.openChat(); return; }
+        }
+      } catch(e) {}
+      // fallback: SDK 버튼 직접 클릭
+      const btn = document.querySelector('[class*="talker"],[id*="talker"],[class*="Talker"],[id*="aitalker"] button, iframe[src*="aitalker"]');
+      if (btn) { btn.click(); return; }
+      // 최후 fallback: 새 탭
+      window.open('https://aitalker.co.kr/smchoi', '_blank');
+    }
+
+    // 말풍선 8초 후 자동 숨김
+    setTimeout(function() {
+      const b = document.getElementById('ai-bubble');
+      if (b) b.style.display = 'none';
+    }, 12000);
+  </script>
 </body>
 </html>
