@@ -217,6 +217,56 @@
       .floating-cta { left:12px; bottom:12px; }
       .floating-cta button { width:54px; height:54px; font-size:.85rem; }
     }
+
+    /* ── 뮤직 플레이어 ── */
+    #music-player {
+      position:fixed; left:18px; bottom:90px; z-index:1001;
+      background:linear-gradient(135deg,#173889,#0a2875);
+      border-radius:999px; padding:10px 18px 10px 14px;
+      display:flex; align-items:center; gap:10px;
+      box-shadow:0 8px 28px rgba(23,56,137,.4);
+      cursor:pointer; transition:.25s;
+      max-width:220px;
+    }
+    #music-player:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(23,56,137,.5); }
+    #music-play-btn {
+      width:36px; height:36px; border-radius:50%;
+      background:rgba(255,255,255,.2); border:0;
+      color:#fff; font-size:1rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:.2s;
+    }
+    #music-play-btn:hover { background:rgba(255,255,255,.35); }
+    #music-info { overflow:hidden; }
+    #music-title {
+      font-size:.75rem; font-weight:900; color:#fff;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      letter-spacing:.02em;
+    }
+    #music-bar {
+      display:flex; align-items:center; gap:6px; margin-top:4px;
+    }
+    #music-progress {
+      flex:1; height:3px; background:rgba(255,255,255,.25);
+      border-radius:999px; overflow:hidden; cursor:pointer;
+    }
+    #music-progress-fill {
+      height:100%; background:#ffc400; border-radius:999px;
+      width:0%; transition:width .5s linear;
+    }
+    #music-time { font-size:.68rem; color:rgba(255,255,255,.7); flex-shrink:0; }
+    #music-close {
+      position:absolute; top:-6px; right:-4px;
+      width:18px; height:18px; border-radius:50%;
+      background:#344054; color:#fff; border:0;
+      font-size:.65rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      opacity:.8;
+    }
+    #music-close:hover { opacity:1; }
+    @media(max-width:720px){
+      #music-player { left:12px; bottom:80px; max-width:190px; }
+    }
   </style>
   <!-- Supabase JS SDK v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -835,6 +885,21 @@
       </div>
     </div>
   </footer>
+
+  <!-- 뮤직 플레이어 -->
+  <div id="music-player" style="position:relative;" title="선거송 재생">
+    <button id="music-play-btn" onclick="toggleMusic(event)">▶</button>
+    <div id="music-info">
+      <div id="music-title">🎵 함께 사는 사람 · 최신명</div>
+      <div id="music-bar">
+        <div id="music-progress" onclick="seekMusic(event)">
+          <div id="music-progress-fill"></div>
+        </div>
+        <span id="music-time">0:00</span>
+      </div>
+    </div>
+    <button id="music-close" onclick="closeMusic(event)" title="닫기">✕</button>
+  </div>
 
   <div class="floating-cta">
     <button onclick="copyLink()">공유</button>
@@ -1759,6 +1824,57 @@
   ※ RLS 활성화: ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
   ═══════════════════════════════════════════════════════════════
   -->
+
+  <script>
+  /* ── 뮤직 플레이어 ── */
+  (function(){
+    const SRC = encodeURI('사운드명함1_최신명_AR_1.mp3');
+    const audio = new Audio(SRC);
+    audio.loop = true;
+    let playing = false;
+
+    function fmt(s){
+      s = Math.floor(s||0);
+      return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60);
+    }
+
+    function updateBar(){
+      if(!audio.duration) return;
+      const pct = (audio.currentTime/audio.duration)*100;
+      document.getElementById('music-progress-fill').style.width = pct+'%';
+      document.getElementById('music-time').textContent = fmt(audio.currentTime);
+    }
+    audio.addEventListener('timeupdate', updateBar);
+    audio.addEventListener('ended', function(){ playing=false; document.getElementById('music-play-btn').textContent='▶'; });
+
+    window.toggleMusic = function(e){
+      e.stopPropagation();
+      if(playing){
+        audio.pause(); playing=false;
+        document.getElementById('music-play-btn').textContent='▶';
+      } else {
+        audio.play().then(()=>{
+          playing=true;
+          document.getElementById('music-play-btn').textContent='⏸';
+        }).catch(()=>{});
+      }
+    };
+
+    window.seekMusic = function(e){
+      e.stopPropagation();
+      if(!audio.duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      audio.currentTime = pct * audio.duration;
+    };
+
+    window.closeMusic = function(e){
+      e.stopPropagation();
+      audio.pause(); audio.currentTime=0; playing=false;
+      document.getElementById('music-player').style.display='none';
+    };
+  })();
+  </script>
 
   <script src="https://chatbot-sdk.aitalker.co.kr/talker-sdk.umd.js"></script>
   <script>
