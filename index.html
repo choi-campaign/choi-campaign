@@ -1746,7 +1746,7 @@
       if (!el) return;
       try {
         const { data, error } = await _supabase
-          .from('press').select('*').order('created_at', { ascending: false });
+          .from('press').select('*').order('press_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
         if (error) throw error;
         if (!data || data.length === 0) {
           el.innerHTML = '<div style="color:#667085;font-size:.95rem;">등록된 보도자료가 없습니다.</div>';
