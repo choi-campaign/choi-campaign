@@ -707,22 +707,31 @@ async function deleteActivity(id){
 ════════════════════════════ */
 async function loadPressAdmin(){
   const el = document.getElementById('press-list-admin');
+  if(!el) return;
   el.innerHTML = '<div class="empty">불러오는 중...</div>';
-  const {data,error} = await _sb.from('press').select('*').order('created_at',{ascending:false});
-  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
-  if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 보도자료가 없습니다.</div>'; return; }
-  el.innerHTML = data.map(p => `
-    <div class="list-item" id="press-item-${esc(p.id)}">
-      <div class="list-item-head">
-        <div>
-          <div class="list-item-title">${esc(p.title)}</div>
-          <div class="list-item-meta">${esc(p.source)}</div>
-          <div style="font-size:.8rem;color:var(--blue);margin-top:2px;word-break:break-all;">${esc(p.url)}</div>
+  try {
+    const {data,error} = await _sb.from('press').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 보도자료가 없습니다.</div>'; return; }
+    el.innerHTML = data.map(p => {
+      const pid = String(p.id);
+      return `<div class="list-item" id="press-item-${esc(pid)}">
+        <div class="list-item-head">
+          <div style="min-width:0;flex:1;">
+            <div class="list-item-title">${esc(p.title)}</div>
+            <div class="list-item-meta">${esc(p.source)}</div>
+            <a href="${esc(p.url)}" target="_blank" rel="noopener"
+               style="font-size:.78rem;color:var(--blue);word-break:break-all;display:block;margin-top:2px;">${esc(p.url)}</a>
+          </div>
+          <button class="btn btn-sm btn-danger" style="flex-shrink:0;" onclick="deletePress('${esc(pid)}')">삭제</button>
         </div>
-        <button class="btn btn-sm btn-danger" onclick="deletePress('${esc(p.id)}')">삭제</button>
-      </div>
-      ${p.summary ? `<div class="list-item-meta" style="margin-top:6px;">${esc(p.summary)}</div>` : ''}
-    </div>`).join('');
+        ${p.summary ? `<div class="list-item-meta" style="margin-top:6px;">${esc(p.summary)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('[보도자료 로드]', e);
+    el.innerHTML=`<div class="empty" style="color:var(--red)">불러오기 실패: ${esc(e.message)}</div>`;
+  }
 }
 
 async function submitPress(){
@@ -752,18 +761,39 @@ async function deletePress(id){
    📘 페이스북
 ════════════════════════════ */
 async function loadFbUrl(){
-  const {data,error} = await _sb.from('settings').select('value').eq('key','facebook_post_url').single();
-  if(!error && data) document.getElementById('fb-current').value = data.value;
+  try {
+    const {data,error} = await _sb.from('settings').select('value').eq('key','facebook_post_url').maybeSingle();
+    if(!error && data && data.value) {
+      document.getElementById('fb-current').value = data.value;
+    } else if(error) {
+      console.error('[페이스북 설정 로드]', error);
+    }
+  } catch(e) {
+    console.error('[페이스북 설정 로드]', e);
+  }
 }
 
 async function saveFacebookUrl(){
   const url = document.getElementById('fb-new-url').value.trim();
   if(!url){ alert('새 페이스북 링크를 입력해주세요.'); return; }
-  const {error} = await _sb.from('settings').upsert({key:'facebook_post_url', value:url, updated_at: new Date().toISOString()});
-  if(error){ showStatus('fb-status','오류: '+error.message, false); return; }
-  showStatus('fb-status','✅ 저장되었습니다! 홈페이지를 새로고침하면 반영됩니다.', true);
-  document.getElementById('fb-current').value = url;
-  document.getElementById('fb-new-url').value = '';
+  try {
+    // 먼저 존재 여부 확인
+    const {data:existing} = await _sb.from('settings').select('key').eq('key','facebook_post_url').maybeSingle();
+    let error;
+    if(existing) {
+      // 이미 있으면 update
+      ({error} = await _sb.from('settings').update({value:url, updated_at:new Date().toISOString()}).eq('key','facebook_post_url'));
+    } else {
+      // 없으면 insert
+      ({error} = await _sb.from('settings').insert({key:'facebook_post_url', value:url, updated_at:new Date().toISOString()}));
+    }
+    if(error) throw error;
+    showStatus('fb-status','✅ 저장되었습니다! 홈페이지를 새로고침하면 반영됩니다.', true);
+    document.getElementById('fb-current').value = url;
+    document.getElementById('fb-new-url').value = '';
+  } catch(e) {
+    showStatus('fb-status','오류: '+e.message, false);
+  }
 }
 
 /* ════════════════════════════
@@ -800,6 +830,8 @@ async function deleteSupport(id){
 function initAll(){
   initMsgAdmin();
   initActivityAdmin();
+  loadPressAdmin();
+  loadFbUrl();
 }
 </script>
 </body>
