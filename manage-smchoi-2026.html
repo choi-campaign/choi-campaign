@@ -468,7 +468,7 @@ textarea{min-height:120px;resize:vertical;}
 <script>
 const SUPABASE_URL = "https://maqxqvbfmjvzsbsfhvnc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXhxdmJmbWp2enNic2Zodm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTMyNzMsImV4cCI6MjA5NTAyOTI3M30.QyYid9pnKy7W73fbJGJjbfLitrHMshyA8xIBNtl5AOM";
-const ADMIN_PW = "Tlsaudskrp!00";
+const ADMIN_PW_HASH = "1b1e4db2c4116fb6e2f3a36dd233e228a946398ff07780debcd443ba074cf414"; // SHA-256 해시 (원문 비공개)
 
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -494,9 +494,15 @@ function todayStr(){
 }
 
 /* ── 로그인 ── */
-function doLogin(){
+async function doLogin(){
   const pw = document.getElementById('pw-input').value;
-  if(pw === ADMIN_PW){
+  // SHA-256 해시로 비교 (소스코드에 원문 비밀번호 미노출)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pw);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+  if(hashHex === ADMIN_PW_HASH){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
     initAll();
