@@ -200,6 +200,22 @@ textarea{min-height:120px;resize:vertical;}
 
 /* ── 비어있음 ── */
 .empty{text-align:center;padding:32px 0;color:var(--muted);font-size:.95rem;}
+
+    /* ── 날짜 입력 영역 ── */
+    .date-wrap { position:relative; margin-bottom:14px; }
+    .date-wrap input[type=date] {
+      width:100%; border:1.5px solid var(--line); border-radius:12px;
+      padding:12px 44px 12px 14px; font-size:.95rem; background:#fff;
+      transition:.2s; cursor:pointer; margin-bottom:0;
+    }
+    .date-wrap input[type=date]:focus { outline:none; border-color:var(--blue); }
+    .date-wrap::after {
+      content:"📅"; position:absolute; right:14px; top:50%;
+      transform:translateY(-50%); font-size:1rem; pointer-events:none;
+    }
+    /* 출처/날짜 두 칸 나란히 */
+    .two-col-field { display:grid; grid-template-columns:1fr 140px; gap:10px; }
+    @media(max-width:480px){ .two-col-field { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -246,7 +262,7 @@ textarea{min-height:120px;resize:vertical;}
       <div class="field"><label>제목 *</label>
         <input type="text" id="msg-title" placeholder="예: 오늘의 선거운동 이야기"></div>
       <div class="field"><label>날짜 *</label>
-        <input type="date" id="msg-date"></div>
+        <div class="date-wrap"><input type="date" id="msg-date"></div></div>
       <div class="field"><label>본문 *</label>
         <textarea id="msg-body" placeholder="후보님의 오늘 이야기를 적어주세요..."></textarea></div>
       <div class="field"><label>사진 첨부 (선택, 여러 장 가능)</label>
@@ -280,7 +296,7 @@ textarea{min-height:120px;resize:vertical;}
       <div class="field"><label>제목 *</label>
         <input type="text" id="act-title" placeholder="예: 일산역 출근인사"></div>
       <div class="field"><label>날짜 *</label>
-        <input type="date" id="act-date"></div>
+        <div class="date-wrap"><input type="date" id="act-date"></div></div>
       <div class="field"><label>사진 선택 (여러 장 가능)</label>
         <label class="file-label">
           📷 사진을 선택하거나 여기를 눌러주세요
@@ -316,8 +332,12 @@ textarea{min-height:120px;resize:vertical;}
       </div>
       <div class="field"><label>기사 제목 *</label>
         <input type="text" id="press-title" placeholder="예: 최신명 후보, 인천2호선 연장 촉구"></div>
-      <div class="field"><label>출처 *</label>
-        <input type="text" id="press-source" placeholder="예: 도시정비뉴스 · 2026.05.21"></div>
+      <div class="two-col-field">
+        <div class="field"><label>출처(언론사명) *</label>
+          <input type="text" id="press-source" placeholder="예: 도시정비뉴스"></div>
+        <div class="field"><label>날짜 *</label>
+          <div class="date-wrap"><input type="date" id="press-date"></div></div>
+      </div>
       <div class="field"><label>기사 링크(URL) *</label>
         <input type="url" id="press-url" placeholder="https://..."></div>
       <div class="field"><label>요약 (선택)</label>
@@ -555,7 +575,7 @@ async function initMsgAdmin(){
 async function loadMsgAdmin(){
   const el = document.getElementById('msg-list-admin');
   el.innerHTML = '<div class="empty">불러오는 중...</div>';
-  const { data, error } = await _sb.from('candidate_messages').select('*').order('created_at',{ascending:false}).limit(30);
+  const { data, error } = await _sb.from('candidate_messages').select('*').order('date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false}).limit(30);
   if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
   if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 메시지가 없습니다.</div>'; return; }
   el.innerHTML = data.map(m => `
@@ -654,7 +674,7 @@ async function initActivityAdmin(){
 async function loadActivityAdmin(){
   const el = document.getElementById('act-list-admin');
   el.innerHTML = '<div class="empty">불러오는 중...</div>';
-  const {data,error} = await _sb.from('activities').select('*').order('created_at',{ascending:false}).limit(20);
+  const {data,error} = await _sb.from('activities').select('*').order('date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false}).limit(20);
   if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
   if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 활동사진이 없습니다.</div>'; return; }
   el.innerHTML = data.map(a => `
@@ -710,7 +730,7 @@ async function loadPressAdmin(){
   if(!el) return;
   el.innerHTML = '<div class="empty">불러오는 중...</div>';
   try {
-    const {data,error} = await _sb.from('press').select('*').order('created_at',{ascending:false});
+    const {data,error} = await _sb.from('press').select('*').order('press_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
     if(error) throw error;
     if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 보도자료가 없습니다.</div>'; return; }
     el.innerHTML = data.map(p => {
@@ -736,15 +756,22 @@ async function loadPressAdmin(){
 
 async function submitPress(){
   const title   = document.getElementById('press-title').value.trim();
-  const source  = document.getElementById('press-source').value.trim();
+  const srcName = document.getElementById('press-source').value.trim();
+  const srcDate = document.getElementById('press-date').value;
   const url     = document.getElementById('press-url').value.trim();
   const summary = document.getElementById('press-summary').value.trim();
-  if(!title||!source||!url){ alert('제목, 출처, 링크를 모두 입력해주세요.'); return; }
-  const {error} = await _sb.from('press').insert([{title,source,url,summary}]);
+  if(!title||!srcName||!srcDate||!url){ alert('제목, 출처, 날짜, 링크를 모두 입력해주세요.'); return; }
+  // 날짜 표시 형식: 2026.05.21
+  const [y,m,d] = srcDate.split('-');
+  const dateLabel = `${y}.${m}.${d}`;
+  const source = `${srcName} · ${dateLabel}`;
+  // press_date 컬럼에 날짜 저장 (정렬용)
+  const {error} = await _sb.from('press').insert([{title, source, url, summary, press_date: srcDate}]);
   if(error){ showStatus('press-status','오류: '+error.message, false); return; }
   showStatus('press-status','✅ 등록되었습니다!', true);
   document.getElementById('press-title').value='';
   document.getElementById('press-source').value='';
+  document.getElementById('press-date').value='';
   document.getElementById('press-url').value='';
   document.getElementById('press-summary').value='';
   await loadPressAdmin();
@@ -832,6 +859,9 @@ function initAll(){
   initActivityAdmin();
   loadPressAdmin();
   loadFbUrl();
+  // press 날짜 오늘로 초기화
+  const pd = document.getElementById('press-date');
+  if(pd) pd.value = todayStr();
 }
 </script>
 </body>
