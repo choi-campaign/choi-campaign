@@ -752,24 +752,13 @@
       <div class="media-grid">
         <div class="placeholder-box">
           <h3>보도자료</h3>
-          <a href="https://www.mygoyang.com/news/articleView.html?idxno=88736" target="_blank" rel="noopener" style="display:block; background:#f8fafc; border-radius:18px; padding:20px; border:1px solid #dbe4f0;">
-            <div style="font-size:.85rem; font-weight:900; color:#173889; margin-bottom:8px;">MYGOYANG NEWS</div>
-            <div style="font-size:1.12rem; font-weight:900; color:#07145a;">최신명 후보 관련 보도자료 보기</div>
-          </a> <a href="https://blog.naver.com/brunchtv/224289654452" target="_blank" rel="noopener" style="display:block; background:#f8fafc; border-radius:18px; padding:20px; border:1px solid #dbe4f0; margin-top:12px;">
-  <div style="font-size:.85rem; font-weight:900; color:#173889; margin-bottom:8px;">NAVER BLOG</div>
-  <div style="font-size:1.12rem; font-weight:900; color:#07145a;">최신명 후보 관련 블로그 보기</div>
-</a>
-<a href="https://www.dosijeongbi.com/9918" target="_blank" rel="noopener" style="display:block; background:#f8fafc; border-radius:18px; padding:20px; border:1px solid #dbe4f0; margin-top:12px;">
-  <div style="font-size:.85rem; font-weight:900; color:#173889; margin-bottom:8px;">도시정비뉴스 · 2026.05.21</div>
-  <div style="font-size:1.05rem; font-weight:900; color:#07145a; line-height:1.5;">6·3지선 민주당 김포·고양·검단 후보들,<br>인천2호선 연장 촉구</div>
-  <div style="font-size:.88rem; color:#667085; margin-top:6px; line-height:1.6;">최신명 후보 포함 민주당 단체장·광역·기초의원 후보자들이 인천2호선 검단~김포~고양 연장사업 예비타당성조사 통과를 촉구하는 기자회견을 개최했습니다.</div>
-</a>
+          <div id="press-list"><div style="color:#667085;font-size:.95rem;padding:20px 0;">불러오는 중...</div></div>
         </div>
         <div class="placeholder-box">
           <h3>페이스북 최신글</h3>
           <div class="facebook-feed">
-            <div class="facebook-post">
-              <iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3Dpfbid0W2vNdaMGRgxfcFs5UkZtGk9ZQJP1zbSijwKxDP39BpUWG1EsBR1rxRMTgcXXNecEl%26id%3D100044125743307&show_text=true&width=500" width="500" height="729" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+            <div class="facebook-post" id="fb-post-wrap">
+              <div style="color:#667085;font-size:.95rem;padding:20px 0;">불러오는 중...</div>
             </div>
           </div>
         </div>
@@ -1685,11 +1674,59 @@
         .catch(() => alert("복사에 실패했습니다. 주소창에서 직접 복사해주세요."));
     }
 
+
+    /* ── 보도자료 불러오기 ── */
+    async function loadPress() {
+      const el = document.getElementById('press-list');
+      if (!el) return;
+      try {
+        const { data, error } = await _supabase
+          .from('press').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          el.innerHTML = '<div style="color:#667085;font-size:.95rem;">등록된 보도자료가 없습니다.</div>';
+          return;
+        }
+        el.innerHTML = data.map((p, i) => `
+          <a href="${escHtml(p.url)}" target="_blank" rel="noopener"
+             style="display:block;background:#f8fafc;border-radius:18px;padding:20px;border:1px solid #dbe4f0;${i>0?'margin-top:12px':''}text-decoration:none;">
+            <div style="font-size:.85rem;font-weight:900;color:#173889;margin-bottom:6px;">${escHtml(p.source)}</div>
+            <div style="font-size:1.05rem;font-weight:900;color:#07145a;line-height:1.5;">${escHtml(p.title)}</div>
+            ${p.summary ? `<div style="font-size:.88rem;color:#667085;margin-top:6px;line-height:1.6;">${escHtml(p.summary)}</div>` : ''}
+          </a>`).join('');
+      } catch(e) {
+        console.error('[보도자료]', e);
+        el.innerHTML = '<div style="color:#c0392b;font-size:.9rem;">불러오기 실패</div>';
+      }
+    }
+
+    /* ── 페이스북 최신글 불러오기 ── */
+    async function loadFacebookPost() {
+      const wrap = document.getElementById('fb-post-wrap');
+      if (!wrap) return;
+      try {
+        const { data, error } = await _supabase
+          .from('settings').select('value').eq('key', 'facebook_post_url').single();
+        if (error) throw error;
+        const fbUrl = data.value;
+        const encoded = encodeURIComponent(fbUrl);
+        wrap.innerHTML = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&show_text=true&width=500"
+          width="500" height="729" scrolling="no" frameborder="0" allowfullscreen="true"
+          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          style="border:none;overflow:hidden;border-radius:14px;background:#fff;width:100%;max-width:500px;display:block;margin:0 auto;"></iframe>`;
+      } catch(e) {
+        console.error('[페이스북]', e);
+        wrap.innerHTML = '<div style="color:#c0392b;font-size:.9rem;">불러오기 실패</div>';
+      }
+    }
+
     /* ── 페이지 로드 시 응원메시지 불러오기 ── */
     document.addEventListener("DOMContentLoaded", function () {
       loadActivities();
       loadCandidateMsgs();
       loadSupportMessages();
+      loadPress();
+      loadFacebookPost();
       // ?admin 파라미터가 있을 때만 관리자 패널 표시
       if (new URLSearchParams(window.location.search).has('admin')) {
         document.querySelectorAll('.admin-panel').forEach(el => { el.style.display='block'; el.classList.add('visible'); });

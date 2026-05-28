@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 페이지 · 1-나 최신명</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --blue:#173889;--deep:#07145a;--sky:#e8f0ff;
+  --green:#0a6e3f;--red:#c0392b;--yellow:#ffc400;
+  --muted:#667085;--line:#dbe4f0;--bg:#f4f7fd;--white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Pretendard","Noto Sans KR",sans-serif;background:var(--bg);color:#16213a;-webkit-font-smoothing:antialiased;}
+button,input,textarea,select{font-family:inherit;}
+
+/* ── 로그인 화면 ── */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;
+}
+.login-box{
+  background:var(--white);border-radius:24px;padding:40px 36px;
+  width:100%;max-width:400px;box-shadow:0 20px 60px rgba(23,56,137,.15);
+  text-align:center;
+}
+.login-logo{font-size:2rem;margin-bottom:8px;}
+.login-title{font-size:1.5rem;font-weight:950;color:var(--deep);margin-bottom:6px;}
+.login-sub{font-size:.9rem;color:var(--muted);margin-bottom:28px;}
+.login-box input{
+  width:100%;border:1.5px solid var(--line);border-radius:14px;
+  padding:14px 16px;font-size:1rem;margin-bottom:12px;
+  transition:.2s;
+}
+.login-box input:focus{outline:none;border-color:var(--blue);}
+.btn-login{
+  width:100%;border:0;border-radius:14px;background:var(--blue);
+  color:#fff;padding:15px;font-size:1rem;font-weight:900;cursor:pointer;
+  transition:.2s;
+}
+.btn-login:hover{background:#0f2a6b;}
+.login-error{color:var(--red);font-size:.9rem;margin-top:10px;display:none;}
+
+/* ── 메인 레이아웃 ── */
+#admin-app{display:none;}
+.top-bar{
+  background:var(--blue);color:#fff;
+  padding:0 20px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.top-bar .brand{font-weight:950;font-size:1rem;}
+.top-bar .brand small{display:block;font-size:.72rem;opacity:.75;font-weight:500;}
+.btn-logout{
+  border:1px solid rgba(255,255,255,.4);background:transparent;
+  color:#fff;border-radius:999px;padding:7px 16px;
+  font-size:.85rem;font-weight:700;cursor:pointer;
+}
+
+/* ── 탭 ── */
+.tab-bar{
+  background:var(--white);border-bottom:1px solid var(--line);
+  display:flex;overflow-x:auto;padding:0 16px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-item{
+  flex-shrink:0;border:0;background:transparent;
+  padding:16px 18px 14px;font-size:.92rem;font-weight:900;
+  color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;
+  white-space:nowrap;transition:.15s;
+}
+.tab-item.on{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* ── 패널 ── */
+.panel{display:none;padding:20px;max-width:800px;margin:0 auto;}
+.panel.on{display:block;}
+
+/* ── 카드 ── */
+.card{
+  background:var(--white);border-radius:20px;padding:24px;
+  box-shadow:0 8px 24px rgba(16,24,40,.07);margin-bottom:20px;
+}
+.card h3{font-size:1.05rem;font-weight:950;color:var(--deep);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* ── 폼 요소 ── */
+label{display:block;font-size:.85rem;font-weight:900;color:#344054;margin-bottom:6px;}
+input[type=text],input[type=url],input[type=date],input[type=password],textarea,select{
+  width:100%;border:1.5px solid var(--line);border-radius:12px;
+  padding:12px 14px;font-size:.95rem;background:#fff;
+  transition:.2s;margin-bottom:14px;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);}
+textarea{min-height:120px;resize:vertical;}
+.field{margin-bottom:4px;}
+
+/* ── 버튼 ── */
+.btn{
+  border:0;border-radius:12px;padding:12px 22px;
+  font-size:.95rem;font-weight:900;cursor:pointer;transition:.18s;
+}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:#0f2a6b;}
+.btn-primary:disabled{background:#94a3b8;cursor:not-allowed;}
+.btn-danger{background:#fee2e2;color:var(--red);}
+.btn-danger:hover{background:#fecaca;}
+.btn-sm{padding:7px 14px;font-size:.82rem;}
+.btn-success{background:#ecfdf5;color:var(--green);}
+.btn-cancel{background:#f1f5f9;color:#475467;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+
+/* ── 상태 메시지 ── */
+.status{
+  border-radius:12px;padding:12px 16px;font-size:.9rem;
+  margin-top:10px;display:none;
+}
+.status.ok{background:#ecfdf5;color:#166534;border:1px solid #86efac;}
+.status.err{background:#fff5f5;color:var(--red);border:1px solid #fca5a5;}
+
+/* ── 목록 아이템 ── */
+.list-item{
+  background:#f8fafc;border:1px solid var(--line);border-radius:16px;
+  padding:16px 18px;margin-bottom:10px;
+}
+.list-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.list-item-title{font-weight:900;color:var(--deep);font-size:.95rem;line-height:1.4;}
+.list-item-meta{font-size:.8rem;color:var(--muted);margin-top:4px;}
+.list-item-body{font-size:.88rem;color:#475467;margin-top:8px;line-height:1.6;
+  white-space:pre-wrap;word-break:break-word;
+  max-height:80px;overflow:hidden;position:relative;}
+.list-item-body.expanded{max-height:none;}
+.list-item-expand{
+  font-size:.8rem;color:var(--blue);font-weight:900;cursor:pointer;
+  background:none;border:none;padding:4px 0;margin-top:4px;
+}
+.img-thumb{
+  display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;
+}
+.img-thumb img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
+
+/* ── 구분선 ── */
+.divider{height:1px;background:var(--line);margin:20px 0;}
+
+/* ── 도움말 ── */
+.help-box{
+  background:var(--sky);border-radius:14px;padding:14px 16px;
+  margin-bottom:16px;font-size:.88rem;color:#344054;line-height:1.7;
+}
+.help-box strong{color:var(--blue);}
+.help-toggle{
+  background:none;border:1px solid var(--line);border-radius:999px;
+  padding:5px 14px;font-size:.8rem;color:var(--muted);cursor:pointer;
+  margin-bottom:14px;
+}
+
+/* ── 업로드 프리뷰 ── */
+.preview-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.prev-item{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+.prev-item img{width:100%;height:100%;object-fit:cover;}
+.prev-item button{
+  position:absolute;top:2px;right:2px;width:20px;height:20px;
+  border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;
+  font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+
+/* ── 파일 입력 ── */
+.file-label{
+  display:block;border:2px dashed var(--line);border-radius:12px;
+  padding:16px;text-align:center;cursor:pointer;color:var(--muted);
+  font-size:.9rem;transition:.2s;margin-bottom:14px;
+}
+.file-label:hover{border-color:var(--blue);color:var(--blue);}
+.file-label input{display:none;}
+
+/* ── 뱃지 ── */
+.badge{
+  display:inline-block;font-size:.72rem;font-weight:900;
+  border-radius:999px;padding:3px 10px;
+}
+.badge-blue{background:var(--sky);color:var(--blue);}
+.badge-green{background:#e8f5ee;color:var(--green);}
+
+/* ── 반응형 ── */
+@media(max-width:600px){
+  .panel{padding:14px;}
+  .card{padding:18px 16px;}
+  .btn-row{gap:8px;}
+  .tab-item{padding:14px 14px 12px;font-size:.85rem;}
+}
+
+/* ── 로딩 스피너 ── */
+.spinner{
+  display:inline-block;width:18px;height:18px;
+  border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 비어있음 ── */
+.empty{text-align:center;padding:32px 0;color:var(--muted);font-size:.95rem;}
+</style>
+</head>
+<body>
+
+<!-- ═══ 로그인 화면 ═══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🔒</div>
+    <div class="login-title">관리자 로그인</div>
+    <div class="login-sub">1-나 최신명 홈페이지 관리자 페이지</div>
+    <input type="password" id="pw-input" placeholder="비밀번호 입력" autocomplete="current-password">
+    <button class="btn-login" onclick="doLogin()">로그인</button>
+    <div class="login-error" id="login-error">비밀번호가 틀렸습니다.</div>
+  </div>
+</div>
+
+<!-- ═══ 관리자 앱 ═══ -->
+<div id="admin-app">
+  <div class="top-bar">
+    <div class="brand">
+      관리자 페이지
+      <small>1-나 최신명 · 고양시 사선거구</small>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">로그아웃</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item on" onclick="showTab('msg',this)">📋 메시지</button>
+    <button class="tab-item" onclick="showTab('activity',this)">📸 활동사진</button>
+    <button class="tab-item" onclick="showTab('press',this)">📰 보도자료</button>
+    <button class="tab-item" onclick="showTab('facebook',this)">📘 페이스북</button>
+    <button class="tab-item" onclick="showTab('support',this)">💬 응원메시지</button>
+    <button class="tab-item" onclick="showTab('help',this)">❓ 도움말</button>
+  </div>
+
+  <!-- ════════════════════════════
+       📋 후보자 메시지
+  ════════════════════════════ -->
+  <div class="panel on" id="tab-msg">
+
+    <!-- 등록 폼 -->
+    <div class="card">
+      <h3 id="msg-form-title">✏️ 새 메시지 등록</h3>
+      <div class="field"><label>제목 *</label>
+        <input type="text" id="msg-title" placeholder="예: 오늘의 선거운동 이야기"></div>
+      <div class="field"><label>날짜 *</label>
+        <input type="date" id="msg-date"></div>
+      <div class="field"><label>본문 *</label>
+        <textarea id="msg-body" placeholder="후보님의 오늘 이야기를 적어주세요..."></textarea></div>
+      <div class="field"><label>사진 첨부 (선택, 여러 장 가능)</label>
+        <label class="file-label">
+          📷 사진을 선택하거나 여기를 눌러주세요
+          <input type="file" id="msg-file" accept="image/*" multiple onchange="previewFiles(this,'msg-preview')">
+        </label>
+        <div class="preview-grid" id="msg-preview"></div>
+      </div>
+      <input type="hidden" id="msg-edit-id">
+      <div class="btn-row">
+        <button class="btn btn-primary" id="msg-submit-btn" onclick="submitMsg()">등록하기</button>
+        <button class="btn btn-cancel" id="msg-cancel-btn" style="display:none" onclick="cancelMsgEdit()">취소</button>
+      </div>
+      <div class="status" id="msg-status"></div>
+    </div>
+
+    <!-- 목록 -->
+    <div class="card">
+      <h3>📋 등록된 메시지 목록</h3>
+      <div id="msg-list-admin"><div class="empty">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       📸 활동사진
+  ════════════════════════════ -->
+  <div class="panel" id="tab-activity">
+    <div class="card">
+      <h3>📸 활동사진 등록</h3>
+      <div class="field"><label>제목 *</label>
+        <input type="text" id="act-title" placeholder="예: 일산역 출근인사"></div>
+      <div class="field"><label>날짜 *</label>
+        <input type="date" id="act-date"></div>
+      <div class="field"><label>사진 선택 (여러 장 가능)</label>
+        <label class="file-label">
+          📷 사진을 선택하거나 여기를 눌러주세요
+          <input type="file" id="act-file" accept="image/*,video/*" multiple onchange="previewFiles(this,'act-preview')">
+        </label>
+        <div class="preview-grid" id="act-preview"></div>
+      </div>
+      <div class="field"><label>페이스북 영상 링크 (선택)</label>
+        <input type="url" id="act-video" placeholder="https://www.facebook.com/..."></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="act-submit-btn" onclick="submitActivity()">등록하기</button>
+      </div>
+      <div class="status" id="act-status"></div>
+    </div>
+    <div class="card">
+      <h3>📋 등록된 활동사진 목록</h3>
+      <div id="act-list-admin"><div class="empty">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       📰 보도자료
+  ════════════════════════════ -->
+  <div class="panel" id="tab-press">
+    <div class="card">
+      <h3>📰 보도자료 추가</h3>
+      <button class="help-toggle" onclick="toggleHelp('press-help')">❓ 어떻게 하나요?</button>
+      <div class="help-box" id="press-help" style="display:none">
+        <strong>1.</strong> 기사 링크(URL)를 주소창에서 복사해 주세요.<br>
+        <strong>2.</strong> 출처명은 언론사 이름입니다. (예: 도시정비뉴스, 마이고양)<br>
+        <strong>3.</strong> 요약은 짧게 한두 줄이면 충분합니다. 생략 가능합니다.<br>
+        <strong>4.</strong> 등록하면 홈페이지 보도자료 섹션에 바로 나타납니다.
+      </div>
+      <div class="field"><label>기사 제목 *</label>
+        <input type="text" id="press-title" placeholder="예: 최신명 후보, 인천2호선 연장 촉구"></div>
+      <div class="field"><label>출처 *</label>
+        <input type="text" id="press-source" placeholder="예: 도시정비뉴스 · 2026.05.21"></div>
+      <div class="field"><label>기사 링크(URL) *</label>
+        <input type="url" id="press-url" placeholder="https://..."></div>
+      <div class="field"><label>요약 (선택)</label>
+        <textarea id="press-summary" placeholder="기사 내용을 한두 줄로 요약해주세요." style="min-height:80px;"></textarea></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="submitPress()">등록하기</button>
+      </div>
+      <div class="status" id="press-status"></div>
+    </div>
+    <div class="card">
+      <h3>📋 등록된 보도자료 목록</h3>
+      <div id="press-list-admin"><div class="empty">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       📘 페이스북 최신글
+  ════════════════════════════ -->
+  <div class="panel" id="tab-facebook">
+    <div class="card">
+      <h3>📘 페이스북 최신글 교체</h3>
+      <button class="help-toggle" onclick="toggleHelp('fb-help')">❓ 링크 찾는 방법</button>
+      <div class="help-box" id="fb-help" style="display:none">
+        <strong>1.</strong> 페이스북 앱에서 올린 글을 찾아주세요.<br>
+        <strong>2.</strong> 글 오른쪽 위 <strong>···</strong> 버튼을 누르세요.<br>
+        <strong>3.</strong> <strong>"게시물 링크 복사"</strong>를 선택하세요.<br>
+        <strong>4.</strong> 복사한 링크를 아래 칸에 붙여넣고 저장하세요.<br>
+        <strong>5.</strong> 홈페이지를 새로고침하면 바뀐 글이 보입니다.
+      </div>
+      <div class="field"><label>현재 연결된 링크</label>
+        <input type="text" id="fb-current" readonly style="background:#f8fafc;color:var(--muted);font-size:.82rem;">
+      </div>
+      <div class="field"><label>새 페이스북 글 링크 *</label>
+        <input type="url" id="fb-new-url" placeholder="https://www.facebook.com/permalink.php?..."></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveFacebookUrl()">저장하기</button>
+      </div>
+      <div class="status" id="fb-status"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       💬 응원메시지
+  ════════════════════════════ -->
+  <div class="panel" id="tab-support">
+    <div class="card">
+      <h3>💬 응원메시지 목록 <span id="support-count" style="font-size:.82rem;color:var(--muted);font-weight:500;"></span></h3>
+      <div id="support-list-admin"><div class="empty">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       ❓ 도움말
+  ════════════════════════════ -->
+  <div class="panel" id="tab-help">
+    <div class="card">
+      <h3>🏠 홈페이지 바로가기</h3>
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="window.open('https://choi-campaign.github.io/choi-campaign/','_blank')">홈페이지 열기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>❓ 자주 막히는 상황 해결법</h3>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:900;color:var(--deep);margin-bottom:8px;">📱 사진이 안 올라갈 때</div>
+        <div class="help-box" style="margin-bottom:0;">
+          사진 파일이 너무 클 수 있습니다.<br>
+          <strong>해결:</strong> 카카오톡으로 사진을 보낼 때 "원본"이 아닌 <strong>일반 화질</strong>로 저장하면 용량이 줄어듭니다.<br>
+          또는 폰 갤러리에서 사진 선택 → 공유 → "크기 줄여서 저장" 옵션을 사용하세요.
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:900;color:var(--deep);margin-bottom:8px;">🔄 등록했는데 홈페이지에 안 보일 때</div>
+        <div class="help-box" style="margin-bottom:0;">
+          <strong>1.</strong> 홈페이지를 완전히 새로고침 해주세요.<br>
+          <strong>iOS:</strong> 주소창 왼쪽 새로고침(↺) 버튼 꾹 누르기<br>
+          <strong>Android:</strong> 브라우저 메뉴 → 새로고침<br>
+          <strong>2.</strong> 그래도 안 보이면 1~2분 기다렸다가 다시 확인해주세요.
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:900;color:var(--deep);margin-bottom:8px;">🗑 실수로 삭제했을 때</div>
+        <div class="help-box" style="margin-bottom:0;">
+          삭제 전 확인창이 뜨기 때문에 실수로 삭제되는 경우는 드뭅니다.<br>
+          만약 삭제되었다면 다시 등록해 주세요.<br>
+          메시지 본문은 카카오톡·메모 앱에도 남아있을 수 있습니다.
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:900;color:var(--deep);margin-bottom:8px;">🔐 비밀번호를 잊었을 때</div>
+        <div class="help-box" style="margin-bottom:0;">
+          현재 비밀번호: 담당자에게 문의하세요.<br>
+          비밀번호는 홈페이지 소스코드에서 확인할 수 있습니다.<br>
+          GitHub → index.html → ADMIN_PW 검색
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:900;color:var(--deep);margin-bottom:8px;">📘 페이스북 링크 찾는 방법</div>
+        <div class="help-box" style="margin-bottom:0;">
+          <strong>1.</strong> 페이스북 앱에서 올린 글 찾기<br>
+          <strong>2.</strong> 글 오른쪽 위 <strong>···</strong> 버튼 클릭<br>
+          <strong>3.</strong> <strong>"게시물 링크 복사"</strong> 선택<br>
+          <strong>4.</strong> 관리자 페이지 "페이스북" 탭에서 붙여넣기 → 저장
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📞 기술 문의</h3>
+      <div class="help-box" style="margin-bottom:0;">
+        홈페이지 관련 기술적인 문제가 생기면<br>
+        담당자에게 <strong>화면 캡처</strong>와 함께 연락해 주세요.<br><br>
+        <strong>꼭 캡처해야 할 것:</strong><br>
+        · 오류가 난 화면 전체<br>
+        · 빨간색 오류 문구가 있으면 그것도 캡처
+      </div>
+    </div>
+  </div>
+
+</div><!-- /admin-app -->
+
+<script>
+const SUPABASE_URL = "https://maqxqvbfmjvzsbsfhvnc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXhxdmJmbWp2enNic2Zodm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTMyNzMsImV4cCI6MjA5NTAyOTI3M30.QyYid9pnKy7W73fbJGJjbfLitrHMshyA8xIBNtl5AOM";
+const ADMIN_PW = "Tlsaudskrp!00";
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── 유틸 ── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showStatus(id, msg, ok){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'status ' + (ok ? 'ok' : 'err');
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+function setLoading(btnId, loading){
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span> 처리 중...' : btn.dataset.label || '등록하기';
+}
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* ── 로그인 ── */
+function doLogin(){
+  const pw = document.getElementById('pw-input').value;
+  if(pw === ADMIN_PW){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    initAll();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+function doLogout(){
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+}
+
+/* ── 탭 ── */
+function showTab(name, btn){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='press') loadPressAdmin();
+  if(name==='support') loadSupportAdmin();
+  if(name==='facebook') loadFbUrl();
+  if(name==='activity') loadActivityAdmin();
+}
+
+/* ── 파일 미리보기 ── */
+function previewFiles(input, gridId){
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  Array.from(input.files).forEach(file => {
+    if(!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wrap = document.createElement('div'); wrap.className='prev-item';
+      const img = document.createElement('img'); img.src = e.target.result;
+      const btn = document.createElement('button'); btn.textContent='×';
+      btn.onclick = () => wrap.remove();
+      wrap.appendChild(img); wrap.appendChild(btn); grid.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function toggleHelp(id){
+  const el = document.getElementById(id);
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+/* ── 이미지 압축 → base64 ── */
+function imgToB64(file){
+  return new Promise((res,rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX=1200; let w=img.width, h=img.height;
+        if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',0.75));
+      };
+      img.onerror=rej; img.src=e.target.result;
+    };
+    reader.onerror=rej; reader.readAsDataURL(file);
+  });
+}
+
+/* ════════════════════════════
+   📋 후보자 메시지
+════════════════════════════ */
+async function initMsgAdmin(){
+  document.getElementById('msg-date').value = todayStr();
+  await loadMsgAdmin();
+}
+
+async function loadMsgAdmin(){
+  const el = document.getElementById('msg-list-admin');
+  el.innerHTML = '<div class="empty">불러오는 중...</div>';
+  const { data, error } = await _sb.from('candidate_messages').select('*').order('created_at',{ascending:false}).limit(30);
+  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
+  if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 메시지가 없습니다.</div>'; return; }
+  el.innerHTML = data.map(m => `
+    <div class="list-item" id="msg-item-${esc(m.id)}">
+      <div class="list-item-head">
+        <div>
+          <div class="list-item-title">${esc(m.title)}</div>
+          <div class="list-item-meta">${esc(m.date)}</div>
+        </div>
+        <div class="btn-row" style="flex-shrink:0;">
+          <button class="btn btn-sm btn-success" onclick="editMsg(${JSON.stringify(m).replace(/"/g,'&quot;')})">수정</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMsg('${esc(m.id)}')">삭제</button>
+        </div>
+      </div>
+      <div class="list-item-body" id="body-${esc(m.id)}">${esc(m.body)}</div>
+      <button class="list-item-expand" onclick="toggleBody('${esc(m.id)}')">더보기 ▼</button>
+      ${m.img ? `<div class="img-thumb">${m.img.split('||').filter(Boolean).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>` : ''}
+    </div>`).join('');
+}
+
+function toggleBody(id){
+  const el = document.getElementById('body-'+id);
+  const btn = el.nextElementSibling;
+  if(el.classList.contains('expanded')){ el.classList.remove('expanded'); btn.textContent='더보기 ▼'; }
+  else{ el.classList.add('expanded'); btn.textContent='접기 ▲'; }
+}
+
+async function submitMsg(){
+  const title = document.getElementById('msg-title').value.trim();
+  const date  = document.getElementById('msg-date').value.trim();
+  const body  = document.getElementById('msg-body').value.trim();
+  const editId = document.getElementById('msg-edit-id').value.trim();
+  if(!title||!date||!body){ alert('제목, 날짜, 본문을 모두 입력해주세요.'); return; }
+
+  setLoading('msg-submit-btn', true);
+  try {
+    const files = Array.from(document.getElementById('msg-file').files).filter(f=>f.type.startsWith('image/'));
+    const imgs = [];
+    for(let i=0;i<files.length;i++) imgs.push(await imgToB64(files[i]));
+
+    if(editId){
+      const upd = {title, date, body};
+      if(imgs.length>0) upd.img = imgs.join('||');
+      const {error} = await _sb.from('candidate_messages').update(upd).eq('id',editId);
+      if(error) throw error;
+      showStatus('msg-status','✅ 수정되었습니다!', true);
+    } else {
+      const {error} = await _sb.from('candidate_messages').insert([{title,date,body,img:imgs.join('||')}]);
+      if(error) throw error;
+      showStatus('msg-status','✅ 등록되었습니다!', true);
+    }
+    cancelMsgEdit();
+    await loadMsgAdmin();
+  } catch(e){ showStatus('msg-status','오류: '+e.message, false); }
+  finally{ setLoading('msg-submit-btn', false); }
+}
+
+function editMsg(item){
+  document.getElementById('msg-title').value = item.title;
+  document.getElementById('msg-date').value = item.date;
+  document.getElementById('msg-body').value = item.body;
+  document.getElementById('msg-edit-id').value = item.id;
+  document.getElementById('msg-form-title').textContent = '✏️ 메시지 수정';
+  document.getElementById('msg-submit-btn').textContent = '수정 저장';
+  document.getElementById('msg-cancel-btn').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function cancelMsgEdit(){
+  document.getElementById('msg-title').value='';
+  document.getElementById('msg-date').value = todayStr();
+  document.getElementById('msg-body').value='';
+  document.getElementById('msg-file').value='';
+  document.getElementById('msg-preview').innerHTML='';
+  document.getElementById('msg-edit-id').value='';
+  document.getElementById('msg-form-title').textContent='✏️ 새 메시지 등록';
+  document.getElementById('msg-submit-btn').textContent='등록하기';
+  document.getElementById('msg-cancel-btn').style.display='none';
+}
+
+async function deleteMsg(id){
+  if(!confirm('이 메시지를 삭제할까요?')) return;
+  const {error} = await _sb.from('candidate_messages').delete().eq('id',id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+  document.getElementById('msg-item-'+id)?.remove();
+}
+
+/* ════════════════════════════
+   📸 활동사진
+════════════════════════════ */
+async function initActivityAdmin(){
+  document.getElementById('act-date').value = todayStr();
+  await loadActivityAdmin();
+}
+
+async function loadActivityAdmin(){
+  const el = document.getElementById('act-list-admin');
+  el.innerHTML = '<div class="empty">불러오는 중...</div>';
+  const {data,error} = await _sb.from('activities').select('*').order('created_at',{ascending:false}).limit(20);
+  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
+  if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 활동사진이 없습니다.</div>'; return; }
+  el.innerHTML = data.map(a => `
+    <div class="list-item" id="act-item-${esc(a.id)}">
+      <div class="list-item-head">
+        <div>
+          <div class="list-item-title">${esc(a.title)}</div>
+          <div class="list-item-meta">${esc(a.date)}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deleteActivity('${esc(a.id)}')">삭제</button>
+      </div>
+      ${a.img ? `<div class="img-thumb">${a.img.split('||').filter(Boolean).slice(0,4).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>` : ''}
+    </div>`).join('');
+}
+
+async function submitActivity(){
+  const title = document.getElementById('act-title').value.trim();
+  const date  = document.getElementById('act-date').value.trim();
+  const video = document.getElementById('act-video').value.trim();
+  if(!title||!date){ alert('제목과 날짜를 입력해주세요.'); return; }
+  const files = Array.from(document.getElementById('act-file').files).filter(f=>f.type.startsWith('image/'));
+  if(files.length===0 && !video){ alert('사진 또는 영상 링크를 입력해주세요.'); return; }
+
+  setLoading('act-submit-btn', true);
+  try {
+    const imgs=[];
+    for(let i=0;i<files.length;i++) imgs.push(await imgToB64(files[i]));
+    const {error} = await _sb.from('activities').insert([{title,date,img:imgs.join('||'),video}]);
+    if(error) throw error;
+    showStatus('act-status','✅ 등록되었습니다!', true);
+    document.getElementById('act-title').value='';
+    document.getElementById('act-date').value=todayStr();
+    document.getElementById('act-file').value='';
+    document.getElementById('act-video').value='';
+    document.getElementById('act-preview').innerHTML='';
+    await loadActivityAdmin();
+  } catch(e){ showStatus('act-status','오류: '+e.message, false); }
+  finally{ setLoading('act-submit-btn', false); }
+}
+
+async function deleteActivity(id){
+  if(!confirm('이 활동사진을 삭제할까요?')) return;
+  const {error} = await _sb.from('activities').delete().eq('id',id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+  document.getElementById('act-item-'+id)?.remove();
+}
+
+/* ════════════════════════════
+   📰 보도자료
+════════════════════════════ */
+async function loadPressAdmin(){
+  const el = document.getElementById('press-list-admin');
+  el.innerHTML = '<div class="empty">불러오는 중...</div>';
+  const {data,error} = await _sb.from('press').select('*').order('created_at',{ascending:false});
+  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
+  if(!data||data.length===0){ el.innerHTML='<div class="empty">등록된 보도자료가 없습니다.</div>'; return; }
+  el.innerHTML = data.map(p => `
+    <div class="list-item" id="press-item-${esc(p.id)}">
+      <div class="list-item-head">
+        <div>
+          <div class="list-item-title">${esc(p.title)}</div>
+          <div class="list-item-meta">${esc(p.source)}</div>
+          <div style="font-size:.8rem;color:var(--blue);margin-top:2px;word-break:break-all;">${esc(p.url)}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deletePress('${esc(p.id)}')">삭제</button>
+      </div>
+      ${p.summary ? `<div class="list-item-meta" style="margin-top:6px;">${esc(p.summary)}</div>` : ''}
+    </div>`).join('');
+}
+
+async function submitPress(){
+  const title   = document.getElementById('press-title').value.trim();
+  const source  = document.getElementById('press-source').value.trim();
+  const url     = document.getElementById('press-url').value.trim();
+  const summary = document.getElementById('press-summary').value.trim();
+  if(!title||!source||!url){ alert('제목, 출처, 링크를 모두 입력해주세요.'); return; }
+  const {error} = await _sb.from('press').insert([{title,source,url,summary}]);
+  if(error){ showStatus('press-status','오류: '+error.message, false); return; }
+  showStatus('press-status','✅ 등록되었습니다!', true);
+  document.getElementById('press-title').value='';
+  document.getElementById('press-source').value='';
+  document.getElementById('press-url').value='';
+  document.getElementById('press-summary').value='';
+  await loadPressAdmin();
+}
+
+async function deletePress(id){
+  if(!confirm('이 보도자료를 삭제할까요?')) return;
+  const {error} = await _sb.from('press').delete().eq('id',id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+  document.getElementById('press-item-'+id)?.remove();
+}
+
+/* ════════════════════════════
+   📘 페이스북
+════════════════════════════ */
+async function loadFbUrl(){
+  const {data,error} = await _sb.from('settings').select('value').eq('key','facebook_post_url').single();
+  if(!error && data) document.getElementById('fb-current').value = data.value;
+}
+
+async function saveFacebookUrl(){
+  const url = document.getElementById('fb-new-url').value.trim();
+  if(!url){ alert('새 페이스북 링크를 입력해주세요.'); return; }
+  const {error} = await _sb.from('settings').upsert({key:'facebook_post_url', value:url, updated_at: new Date().toISOString()});
+  if(error){ showStatus('fb-status','오류: '+error.message, false); return; }
+  showStatus('fb-status','✅ 저장되었습니다! 홈페이지를 새로고침하면 반영됩니다.', true);
+  document.getElementById('fb-current').value = url;
+  document.getElementById('fb-new-url').value = '';
+}
+
+/* ════════════════════════════
+   💬 응원메시지
+════════════════════════════ */
+async function loadSupportAdmin(){
+  const el = document.getElementById('support-list-admin');
+  el.innerHTML = '<div class="empty">불러오는 중...</div>';
+  const {data,error} = await _sb.from('support_messages').select('*').order('created_at',{ascending:false}).limit(50);
+  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">불러오기 실패</div>'; return; }
+  document.getElementById('support-count').textContent = `(총 ${data?.length||0}건)`;
+  if(!data||data.length===0){ el.innerHTML='<div class="empty">아직 응원메시지가 없습니다.</div>'; return; }
+  el.innerHTML = data.map(s => `
+    <div class="list-item" id="sup-item-${esc(s.id)}">
+      <div class="list-item-head">
+        <div>
+          <div class="list-item-title">${esc(s.name)}님 <span class="badge badge-blue">${esc(s.region||'')}</span></div>
+          <div class="list-item-meta">${new Date(s.created_at).toLocaleString('ko-KR')}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deleteSupport('${esc(s.id)}')">삭제</button>
+      </div>
+      <div class="list-item-body expanded" style="max-height:none;">${esc(s.message)}</div>
+    </div>`).join('');
+}
+
+async function deleteSupport(id){
+  if(!confirm('이 응원메시지를 삭제할까요?')) return;
+  const {error} = await _sb.from('support_messages').delete().eq('id',id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+  document.getElementById('sup-item-'+id)?.remove();
+}
+
+/* ── 초기화 ── */
+function initAll(){
+  initMsgAdmin();
+  initActivityAdmin();
+}
+</script>
+</body>
+</html>
